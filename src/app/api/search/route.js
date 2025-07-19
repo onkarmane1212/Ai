@@ -392,11 +392,15 @@ async function generateCasteAnalysis(query, {
   CRITICAL INSTRUCTIONS FOR NEWS ITEMS GENERATION:
 
   1. NEWS ITEM QUANTITY (MUST FOLLOW REQUIRED QUANTITY EXACTLY):
-     - positive: EXACTLY 10 items (sentiment_score > 0.3)
-     - negative: EXACTLY 10 items (sentiment_score < -0.3)
-     - neutral: EXACTLY 5 items (-0.3 <= sentiment_score <= 0.3)
-     - TOTAL: 25 news items (10 + 10 + 5)
-     - DO NOT include fewer items in any category
+     - Be valid JSON with no markdown formatting or extra text.
+     - Include EXACTLY:
+       - 10 positive news items (sentiment_score > 0.3)
+       - 10 negative news items (sentiment_score < -0.3)
+       - 5 neutral news items (-0.3 <= sentiment_score <= 0.3)
+     - Do NOT stop early.
+     - Do NOT skip any section.
+     - Do NOT include less than required number of news items.
+     - If response exceeds token limit, prioritize completing all news items first.
 
   2. NEWS ITEM STRUCTURE (EACH ITEM MUST HAVE ALL FIELDS):
      {
