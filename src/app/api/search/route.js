@@ -2,7 +2,10 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-
+export const config = {
+  runtime: 'nodejs',
+  maxDuration: 300,
+};
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -390,7 +393,7 @@ async function generateCasteAnalysis(query, {
   const additionalInstructions = `
   CRITICAL INSTRUCTIONS FOR NEWS ITEMS GENERATION:
 
-  1. NEWS ITEM QUANTITY (MUST FOLLOW EXACTLY):
+  1. NEWS ITEM QUANTITY (MUST FOLLOW REQUIRED QUANTITY EXACTLY):
      - positive: EXACTLY 10 items (sentiment_score > 0.3)
      - negative: EXACTLY 10 items (sentiment_score < -0.3)
      - neutral: EXACTLY 5 items (-0.3 <= sentiment_score <= 0.3)
