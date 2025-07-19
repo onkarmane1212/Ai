@@ -1,9 +1,7 @@
 // app/api/search/route.js
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { v4 as uuidv4 } from 'uuid';
-import { writeFile, readFile } from 'fs/promises';
-import path from 'path';
+
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -32,6 +30,7 @@ async function saveReport(reportData) {
       headers: {
         'Content-Type': 'application/json',
       },
+      
       body: JSON.stringify(reportData),
     });
     

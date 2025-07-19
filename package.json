@@ -25,6 +25,7 @@
     "encoding": "^0.1.13",
     "file-saver": "^2.0.5",
     "html2canvas": "^1.4.1",
+    "jsonrepair": "^3.13.0",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^2.5.1",
     "jszip": "^3.10.1",
