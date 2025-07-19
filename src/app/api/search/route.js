@@ -121,43 +121,61 @@ async function generateCasteAnalysis(query, {
     region && region !== 'all' ? `, specifically in the ${region} region` : ''
   }${dateRangeText ? `, covering ${dateRangeText}` : ''}.
   
-  IMPORTANT: Your response MUST include the following sections:
+  IMPORTANT: Your response MUST include the following sections with COMPLETE data:
+  
   1. leader_profile: An array of 3-5 key leaders/influencers related to the topic, each with:
-     - name: Full name
-     - position: Current position/role
-     - influence_score: Number from 1-100 indicating their influence
-     - sentiment: 'positive', 'negative', or 'neutral' based on public perception
-     - key_quotes: 2-3 notable quotes from the leader about the topic
-     - recent_activities: 2-3 recent actions or statements related to the topic
+     - name: Full name (REQUIRED)
+     - position: Current position/role (REQUIRED)
+     - influence_score: Number from 1-100 indicating their influence (REQUIRED)
+     - sentiment: 'positive', 'negative', or 'neutral' based on public perception (REQUIRED)
+     - key_quotes: 2-3 notable quotes from the leader about the topic (REQUIRED)
+     - recent_activities: 2-3 recent actions or statements related to the topic (REQUIRED)
      
-  2. executive_summary: A 3-4 paragraph summary including:
+  2. executive_summary: A 3-4 paragraph summary including (REQUIRED):
      - Key findings and insights from the analysis
      - Major trends and patterns in public opinion
      - Potential implications for different stakeholders
      - Strategic recommendations based on the findings
 
+  3. news: An object containing three arrays (REQUIRED):
+     - positive: EXACTLY 10 news items with positive sentiment (sentiment_score > 0.3)
+     - negative: EXACTLY 10 news items with negative sentiment (sentiment_score < -0.3)
+     - neutral: EXACTLY 5 news items with neutral sentiment (-0.3 <= sentiment_score <= 0.3)
+     
+     Each news item MUST include ALL of these fields:
+     - headline: A clear, concise headline (REQUIRED, 5-12 words)
+     - source: The news publication name (REQUIRED, use real publication names like 'The Hindu', 'Times of India')
+     - date: In YYYY-MM-DD format (REQUIRED, must be within the last 30 days)
+     - summary: A 1-2 sentence summary of the article (REQUIRED, 15-40 words)
+     - sentiment_score: A number between -1 and 1 (REQUIRED, positive > 0.3, negative < -0.3, neutral between -0.3 and 0.3)
+     - key_phrases: Array of 2-3 key phrases (REQUIRED, each 1-4 words)
+     - impact_analysis: 1-2 sentences on potential consequences (REQUIRED for negative items)
+     - resolution_suggestions: Array of 2-3 actionable suggestions (REQUIRED for negative items, each 5-15 words)
+
+  4. sentiment_analysis: Object containing (REQUIRED):
+     - overall_sentiment: { positive: number, negative: number, neutral: number, sentiment_threshold: number }
+     - sentiment_by_caste: Object with caste-wise sentiment breakdown
+     - sentiment_breakdown: Detailed analysis including key_phrases and intensity_analysis
+
+  5. Additional required sections (all REQUIRED):
+     - caste_distribution: Object with caste-wise percentage distribution
+     - key_insights: Array of 3-5 key insights
+     - trends: Array of 2-3 major trends
+     - source_analysis: Analysis of top sources and their reliability
+     - key_strengths_weaknesses: Object with strengths and weaknesses arrays
+     - region_wise_analysis: Sentiment analysis by region
+     - platform_sentiment_comparison: Sentiment analysis by platform
+     - demographic_support_base: Support percentages by demographic
+     - analysis_metadata: Metadata about the analysis
+
   Analysis Parameters:
-  - Sentiment Threshold: ${sentimentThreshold} (higher values indicate stronger sentiment required for classification)
-  - Detailed Sentiment Breakdown: Enabled
-  - Source Analysis: Enabled
-  - Detail Level: Detailed
+  - Sentiment Threshold: ${sentimentThreshold}
+  - Detailed Sentiment Breakdown: ${includeSentimentBreakdown ? 'Enabled' : 'Disabled'}
+  - Source Analysis: ${includeSourceAnalysis ? 'Enabled' : 'Disabled'}
+  - Region: ${region === 'all' ? 'All India' : region}
+  - Time Range: ${timeRange === 'custom' ? `${customStartDate} to ${customEndDate}` : timeRange}
   
-  News Article Requirements:
-  - Include at least 20 recent news items minimum 10 and 30
-  - Each news item MUST include:
-    - headline: A clear, concise headline
-    - source: The news publication name
-    - date: In YYYY-MM-DD format (must be within the last month)
-    - summary: A 1-2 sentence summary of the article
-    - sentiment_score: A number between -1 (very negative) and 1 (very positive)
-    - key_phrases: 2-3 key phrases that capture the main topics
-  - For negative sentiment articles, also include:
-    - impact_analysis: 1-2 sentences on potential consequences
-    - resolution_suggestions: 2-3 actionable suggestions to address the issue
-  - Ensure news items are diverse and cover different aspects of the topic
-  - All news items must be realistic and relevant to the query
-  
-  IMPORTANT: Your response MUST be a valid JSON object with the following exact structure. Do not include any markdown formatting or additional text outside the JSON object.
+  IMPORTANT: Your response MUST be a valid JSON object with ALL the above sections. Do not include any markdown formatting or additional text outside the JSON object.
   {
     "caste_distribution": {
       "General": 27.3,
@@ -370,33 +388,47 @@ async function generateCasteAnalysis(query, {
 
   // Additional instructions for the model
   const additionalInstructions = `
-  INSTRUCTIONS:
-  1.all data must be required to be generated by the model
-  2.Generate realistic data based on the query and current context
-  3.Ensure all percentages add up to 100% within each sentiment category
-  4. You MUST include EXACTLY 20 news items in EACH sentiment category: 
-   - "positive": 10 items
-   - "negative": 10 items
-   - "neutral": 5 items
-   This means the total number of news items should be 25.
+  CRITICAL INSTRUCTIONS FOR NEWS ITEMS GENERATION:
 
-5. Do NOT include fewer than 20 in any category. DO NOT include only 3, 5, or 10 items — that will be considered an incomplete response.
+  1. NEWS ITEM QUANTITY (MUST FOLLOW EXACTLY):
+     - positive: EXACTLY 10 items (sentiment_score > 0.3)
+     - negative: EXACTLY 10 items (sentiment_score < -0.3)
+     - neutral: EXACTLY 5 items (-0.3 <= sentiment_score <= 0.3)
+     - TOTAL: 25 news items (10 + 10 + 5)
+     - DO NOT include fewer items in any category
 
-6. If there is not enough real data, simulate realistic, diverse, and relevant data that matches the topic and sentiment category.
+  2. NEWS ITEM STRUCTURE (EACH ITEM MUST HAVE ALL FIELDS):
+     {
+       "headline": "[5-12 word headline]",
+       "source": "[Publication Name]",
+       "date": "YYYY-MM-DD",
+       "summary": "[15-40 word summary]",
+       "sentiment_score": [number between -1 and 1],
+       "key_phrases": ["phrase 1", "phrase 2"],
+       "impact_analysis": "[Only for negative items, 1-2 sentences]",
+       "resolution_suggestions": ["suggestion 1", "suggestion 2"]
+     }
 
-7. Be very careful to match the required news item structure for each item (headline, source, date, summary, sentiment_score, key_phrases, etc.)
+  3. DATA GENERATION RULES:
+     - Generate ALL data based on the query and current context
+     - Create realistic, diverse news items if real data is unavailable
+     - Ensure headlines and summaries are unique and not repetitive
+     - Use realistic publication names (e.g., 'The Hindu', 'Times of India')
+     - Vary the dates within the last 30 days
 
-8. Format all dates as 'YYYY-MM-DD'
+  4. DATA VALIDATION:
+     - All required fields must be present in every news item
+     - Sentiment scores must match the category (positive > 0.3, negative < -0.3, neutral between -0.3 and 0.3)
+     - Dates must be in YYYY-MM-DD format and within the last 30 days
+     - Key phrases must be an array of 2-3 phrases
 
-9. Ensure the response is valid JSON with proper escaping of quotes
+  5. RESPONSE FORMAT:
+     - Must be valid JSON
+     - No markdown code blocks or additional text outside JSON
+     - Properly escape all quotes and special characters
 
-10. Do not include any markdown code blocks or additional text outside the JSON
-
-11. News items should be diverse and cover different aspects of the topic
-
-12. Ensure all news items are realistic and relevant to the query
-  13. You MUST generate ALL data - do not use placeholders or example data
-14. IMPORTANT: The news object must contain total 20 items in sentiment category (positive, negative, neutral)
+  FAILURE TO FOLLOW THESE INSTRUCTIONS WILL RESULT IN AN INVALID RESPONSE
+  
   `;
 
   try {
@@ -440,9 +472,35 @@ async function generateCasteAnalysis(query, {
     try {
       const result = JSON.parse(cleanedContent);
       
-      // Validate the response structure
-      const requiredTopLevel = ['caste_distribution', 'sentiment_analysis', 'news', 'leader_profile', 'executive_summary', 'region_wise_analysis', 'platform_sentiment_comparison', 'demographic_support_base', 'analysis_metadata', 'key_strengths_weaknesses', 'key_findings', 'recommendations', 'sentiment_breakdown', 'overall_sentiment', 'sentiment_by_caste', 'sentiment_by_region', 'sentiment_by_platform', 'sentiment_by_demographic', 'sentiment_by_time', 'sentiment_by_caste_region', 'sentiment_by_caste_platform', 'sentiment_by_caste_demographic', 'sentiment_by_caste_time', 'sentiment_by_region_platform', 'sentiment_by_region_demographic', 'sentiment_by_region_time', 'sentiment_by_platform_demographic', 'sentiment_by_platform_time', 'sentiment_by_demographic_time', 'sentiment_by_caste_region_platform', 'sentiment_by_caste_region_demographic', 'sentiment_by_caste_region_time', 'sentiment_by_caste_platform_demographic', 'sentiment_by_caste_platform_time', 'sentiment_by_caste_demographic_time', 'sentiment_by_region_platform_demographic', 'sentiment_by_region_platform_time', 'sentiment_by_region_demographic_time', 'sentiment_by_platform_demographic_time', 'sentiment_by_caste_region_platform_demographic', 'sentiment_by_caste_region_platform_time', 'sentiment_by_caste_region_demographic_time', 'sentiment_by_caste_platform_demographic_time', 'sentiment_by_region_platform_demographic_time', 'sentiment_by_caste_region_platform_demographic_time'];
-      const missingTopLevel = requiredTopLevel.filter(field => !result[field]);
+      // Define all required top-level fields
+      const requiredTopLevel = [
+        'caste_distribution',
+        'sentiment_analysis',
+        'news',
+        'leader_profile',
+        'executive_summary',
+        'region_wise_analysis',
+        'platform_sentiment_comparison',
+        'demographic_support_base',
+        'analysis_metadata',
+        'key_insights',
+        'trends',
+        'source_analysis',
+        'key_strengths_weaknesses'
+      ];
+      
+      // Check for missing required fields
+      const missingTopLevel = requiredTopLevel.filter(field => {
+        const exists = field in result;
+        if (!exists) return true;
+        
+        // Additional validation for specific fields
+        if (field === 'news') {
+          return !result.news || typeof result.news !== 'object' || 
+                 !result.news.positive || !result.news.negative || !result.news.neutral;
+        }
+        return false;
+      });
       
       if (missingTopLevel.length > 0) {
         console.warn(`Warning: Missing top-level fields: ${missingTopLevel.join(', ')}`);
@@ -456,35 +514,110 @@ async function generateCasteAnalysis(query, {
         });
       }
       
-      // Validate news structure
-      const requiredNewsFields = ['positive', 'negative', 'neutral'];
-      const missingNewsCategories = requiredNewsFields.filter(cat => !result.news[cat]);
-      
-      if (missingNewsCategories.length > 0) {
-        throw new Error(`Invalid news format: missing categories - ${missingNewsCategories.join(', ')}`);
+      // Define required news categories and their minimum counts
+      const requiredNewsCategories = {
+        positive: { min: 10, ideal: 10 },
+        negative: { min: 10, ideal: 10 },
+        neutral: { min: 5, ideal: 5 }
+      };
+
+      // Track validation issues
+      const validationIssues = [];
+      let hasCriticalError = false;
+
+      // Validate news categories
+      for (const [category, counts] of Object.entries(requiredNewsCategories)) {
+        if (!result.news || typeof result.news !== 'object') {
+          validationIssues.push('News object is missing or invalid');
+          hasCriticalError = true;
+          break;
+        }
+
+        if (!Array.isArray(result.news[category])) {
+          validationIssues.push(`'${category}' category is not an array`);
+          hasCriticalError = true;
+          continue;
+        }
+        
+        // Check if we have the minimum required items
+        const itemCount = result.news[category].length;
+        if (itemCount < counts.min) {
+          validationIssues.push(`Insufficient items in '${category}' category: found ${itemCount}, minimum ${counts.min} required`);
+          // Only mark as critical if we have no items at all
+          if (itemCount === 0) hasCriticalError = true;
+        } else if (itemCount < counts.ideal) {
+          validationIssues.push(`Warning: Only ${itemCount} items in '${category}' category (ideally ${counts.ideal})`);
+        }
+      }
+
+      // If we have critical errors, throw an exception
+      if (hasCriticalError) {
+        throw new Error(`News validation failed:\n- ${validationIssues.join('\n- ')}`);
+      } else if (validationIssues.length > 0) {
+        console.warn('News validation warnings:', validationIssues);
       }
       
-      // Validate each news item has required fields
+      // Define required fields for news items
       const requiredNewsItemFields = ['headline', 'source', 'date', 'summary', 'sentiment_score', 'key_phrases'];
       
-      for (const category of requiredNewsFields) {
-        if (!Array.isArray(result.news[category])) {
-          throw new Error(`Invalid news format: ${category} is not an array`);
-        }
+      // Validate each news item
+      for (const [category, items] of Object.entries(result.news)) {
+        if (!Array.isArray(items)) continue;
         
-        if (result.news[category].length < 10) {
-          console.warn(`Warning: Only ${result.news[category].length} items in ${category} category (minimum 10 required)`);
-        }
-        
-        for (const item of result.news[category]) {
-          const missingFields = requiredNewsItemFields.filter(field => item[field] === undefined);
-          if (missingFields.length > 0) {
-            console.warn(`Warning: Missing fields in ${category} news item: ${missingFields.join(', ')}`);
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (typeof item !== 'object' || item === null) {
+            console.warn(`Skipping invalid ${category} news item ${i + 1}: not an object`);
+            continue;
           }
           
-          // Validate date format (YYYY-MM-DD)
-          if (item.date && !/^\d{4}-\d{2}-\d{2}$/.test(item.date)) {
-            console.warn(`Warning: Invalid date format in ${category} news item: ${item.date}`);
+          // Check for missing required fields
+          const missingFields = [];
+          const fieldWarnings = [];
+          
+          requiredNewsItemFields.forEach(field => {
+            const value = item[field];
+            if (value === undefined || value === null || value === '') {
+              missingFields.push(field);
+            } else if (field === 'key_phrases' && (!Array.isArray(value) || value.length === 0)) {
+              fieldWarnings.push(`${field} must be a non-empty array`);
+            } else if (field === 'sentiment_score' && (typeof value !== 'number' || value < -1 || value > 1)) {
+              fieldWarnings.push(`${field} must be a number between -1 and 1`);
+            } else if (field === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+              fieldWarnings.push(`${field} must be in YYYY-MM-DD format`);
+            }
+          });
+          
+          // Additional validation for negative sentiment items
+          if (category === 'negative') {
+            if (!item.impact_analysis) {
+              fieldWarnings.push('missing impact_analysis');
+            }
+            if (!item.resolution_suggestions || !Array.isArray(item.resolution_suggestions) || item.resolution_suggestions.length === 0) {
+              fieldWarnings.push('missing or invalid resolution_suggestions');
+            }
+          }
+          
+          // Log warnings for issues but don't fail the entire request
+          if (missingFields.length > 0 || fieldWarnings.length > 0) {
+            const warnings = [
+              ...missingFields.map(f => `missing ${f}`),
+              ...fieldWarnings
+            ];
+            console.warn(`Issues in ${category} news item ${i + 1}: ${warnings.join('; ')}`);
+            
+            // Add default values for missing required fields
+            missingFields.forEach(field => {
+              if (field === 'key_phrases') {
+                item[field] = ['general'];
+              } else if (field === 'sentiment_score') {
+                item[field] = category === 'positive' ? 0.7 : category === 'negative' ? -0.7 : 0;
+              } else if (field === 'date') {
+                item[field] = new Date().toISOString().split('T')[0];
+              } else {
+                item[field] = `[${field} not provided]`;
+              }
+            });
           }
         }
       }

@@ -225,35 +225,49 @@ function DashboardContent() {
 
   // Sentiment Analysis Section Component
   const SentimentAnalysisSection = () => {
-    if (!sentimentData || !Object.keys(sentimentData).length) return null;
+    if (!searchResults || !sentimentData || Object.keys(sentimentData).length === 0) {
+      return (
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4">Sentiment Analysis</h3>
+          <p className="text-gray-500">No sentiment data available. Please perform a search to see the analysis.</p>
+        </div>
+      );
+    }
 
+    // Safely get platform comparison data with defaults
+    const platformComparison = searchResults.platform_sentiment_comparison || {};
+    const platformNames = Object.keys(platformComparison).filter(k => k !== 'Overall');
+    
     // Prepare data for platform sentiment comparison
     const platformData = {
-      labels: Object.keys(searchResults.platform_sentiment_comparison || {}).filter(k => k !== 'Overall'),
+      labels: platformNames,
       datasets: [
         {
           label: 'Positive',
-          data: Object.entries(searchResults.platform_sentiment_comparison || {})
-            .filter(([key]) => key !== 'Overall')
-            .map(([_, platformData]) => platformData.positive || 0),
+          data: platformNames.map(platform => {
+            const data = platformComparison[platform] || {};
+            return data.positive || 0;
+          }),
           backgroundColor: 'rgba(75, 192, 192, 0.6)',
           borderColor: 'rgba(75, 192, 192, 1)',
           borderWidth: 1
         },
         {
           label: 'Neutral',
-          data: Object.entries(searchResults.platform_sentiment_comparison || {})
-            .filter(([key]) => key !== 'Overall')
-            .map(([_, platformData]) => platformData.neutral || 0),
+          data: platformNames.map(platform => {
+            const data = platformComparison[platform] || {};
+            return data.neutral || 0;
+          }),
           backgroundColor: 'rgba(201, 203, 207, 0.6)',
           borderColor: 'rgba(201, 203, 207, 1)',
           borderWidth: 1
         },
         {
           label: 'Negative',
-          data: Object.entries(searchResults.platform_sentiment_comparison || {})
-            .filter(([key]) => key !== 'Overall')
-            .map(([_, platformData]) => platformData.negative || 0),
+          data: platformNames.map(platform => {
+            const data = platformComparison[platform] || {};
+            return data.negative || 0;
+          }),
           backgroundColor: 'rgba(255, 99, 132, 0.6)',
           borderColor: 'rgba(255, 99, 132, 1)',
           borderWidth: 1
@@ -261,20 +275,30 @@ function DashboardContent() {
       ]
     };
 
+    // Safely get region-wise analysis data with defaults
+    const regionWiseData = searchResults.region_wise_analysis || {};
+    const regionNames = Object.keys(regionWiseData);
+    
     // Prepare data for regional sentiment
     const regionalData = {
-      labels: Object.keys(searchResults.region_wise_analysis || {}),
+      labels: regionNames,
       datasets: [
         {
           label: 'Positive',
-          data: Object.values(searchResults.region_wise_analysis || {}).map(r => r.positive || 0),
+          data: regionNames.map(region => {
+            const data = regionWiseData[region] || {};
+            return data.positive || 0;
+          }),
           backgroundColor: 'rgba(54, 162, 235, 0.6)',
           borderColor: 'rgba(54, 162, 235, 1)',
           borderWidth: 1
         },
         {
           label: 'Negative',
-          data: Object.values(searchResults.region_wise_analysis || {}).map(r => r.negative || 0),
+          data: regionNames.map(region => {
+            const data = regionWiseData[region] || {};
+            return data.negative || 0;
+          }),
           backgroundColor: 'rgba(255, 99, 132, 0.6)',
           borderColor: 'rgba(255, 99, 132, 1)',
           borderWidth: 1
@@ -282,19 +306,27 @@ function DashboardContent() {
       ]
     };
 
+    // Safely get demographic support data with defaults
+    const demographicSupportBase = searchResults.demographic_support_base || {};
+    const supportLabels = [
+      'Youth (18-35)', 
+      'Middle-age (36-55)', 
+      'Senior (56+)', 
+      'Urban', 
+      'Rural'
+    ];
+    
     // Prepare data for demographic support
     const demographicSupportData = {
-      labels: ['Youth (18-35)', 'Middle-age (36-55)', 'Senior (56+)', 'Urban', 'Rural'],
+      labels: supportLabels,
       datasets: [
         {
           label: 'Support %',
-          data: [
-            searchResults.demographic_support_base?.['Youth (18-35)'] || 0,
-            searchResults.demographic_support_base?.['Middle-age (36-55)'] || 0,
-            searchResults.demographic_support_base?.['Senior (56+)'] || 0,
-            searchResults.demographic_support_base?.Urban || 0,
-            searchResults.demographic_support_base?.Rural || 0
-          ],
+          data: supportLabels.map(label => {
+            // Handle different label formats (with or without space after colon)
+            const key = label.replace(':', '').trim();
+            return demographicSupportBase[key] || 0;
+          }),
           backgroundColor: [
             'rgba(255, 159, 64, 0.6)',
             'rgba(75, 192, 192, 0.6)',
@@ -314,8 +346,10 @@ function DashboardContent() {
       ]
     };
 
-    // Calculate overall support
-    const overallSupport = searchResults.demographic_support_base?.Overall || 0;
+    // Calculate overall support with fallback
+    const overallSupport = demographicSupportBase.Overall || 
+                         (demographicSupportBase.overall_support !== undefined ? 
+                          demographicSupportBase.overall_support : 0);
 
     return (
       <div className="space-y-8">
@@ -474,34 +508,89 @@ function DashboardContent() {
     });
     
     if (searchResults) {
+      console.log('Updating with search results:', searchResults);
+      
       // Update leader profile and executive summary
       if (searchResults.leader_profile) {
-        setLeaderProfile(Array.isArray(searchResults.leader_profile) ? searchResults.leader_profile : []);
+        setLeaderProfile(Array.isArray(searchResults.leader_profile) ? 
+          searchResults.leader_profile : []);
       }
       
       if (searchResults.executive_summary) {
-        setExecutiveSummary(searchResults.executive_summary || '');
+        setExecutiveSummary(Array.isArray(searchResults.executive_summary) ? 
+          searchResults.executive_summary.join('\n\n') : 
+          String(searchResults.executive_summary || ''));
       }
       
       // Update caste distribution data
       if (searchResults.caste_distribution) {
-        setCasteData(searchResults.caste_distribution);
+        const distribution = {};
+        // Ensure all values are numbers and handle potential string numbers
+        Object.entries(searchResults.caste_distribution).forEach(([key, value]) => {
+          const numValue = typeof value === 'string' ? 
+            parseFloat(value.replace('%', '')) || 0 : 
+            Number(value) || 0;
+          distribution[key] = numValue;
+        });
+        setCasteData(distribution);
         
-        // Auto-select the first caste if none selected
-        if (!selectedCaste) {
-          const firstCaste = Object.keys(searchResults.caste_distribution)[0];
+        // Auto-select the first caste if none selected or if selected caste doesn't exist
+        if (!selectedCaste || !distribution[selectedCaste]) {
+          const firstCaste = Object.keys(distribution)[0];
           if (firstCaste) setSelectedCaste(firstCaste);
         }
       }
 
-      // Update sentiment data
+      // Update sentiment data with proper defaults
       if (searchResults.sentiment_analysis) {
-        setSentimentData(searchResults.sentiment_analysis);
+        const sentiment = searchResults.sentiment_analysis;
+        // Ensure sentiment_by_caste exists and has proper structure
+        if (sentiment.sentiment_by_caste) {
+          Object.entries(sentiment.sentiment_by_caste).forEach(([caste, data]) => {
+            if (data) {
+              // Ensure all sentiment values are numbers
+              ['positive', 'negative', 'neutral'].forEach(key => {
+                if (data[key] !== undefined) {
+                  data[key] = Number(data[key]) || 0;
+                }
+              });
+            }
+          });
+        }
+        setSentimentData(sentiment);
       }
 
-      // Update insights and trends
-      setInsights(searchResults.insights || getDefaultInsights());
-      setTrends(searchResults.trends || getDefaultTrends());
+      // Update platform comparison data if available
+      if (searchResults.platform_sentiment_comparison) {
+        setPlatformComparison(searchResults.platform_sentiment_comparison);
+      }
+
+      // Update region-wise analysis if available
+      if (searchResults.region_wise_analysis) {
+        setRegionWiseAnalysis(searchResults.region_wise_analysis);
+      }
+
+      // Update demographic support if available
+      if (searchResults.demographic_support_base) {
+        setDemographicSupport(searchResults.demographic_support_base);
+      }
+
+      // Update insights and trends with proper defaults
+      setInsights({
+        key_findings: Array.isArray(searchResults.insights?.key_findings) ? 
+          searchResults.insights.key_findings : 
+          (searchResults.insights ? [searchResults.insights] : []),
+        recommendations: Array.isArray(searchResults.insights?.recommendations) ?
+          searchResults.insights.recommendations :
+          []
+      });
+
+      setTrends({
+        overall_trend: searchResults.trends?.overall_trend || '',
+        notable_changes: Array.isArray(searchResults.trends?.notable_changes) ?
+          searchResults.trends.notable_changes :
+          []
+      });
     }
   }, [searchResults, selectedCaste]);
 
