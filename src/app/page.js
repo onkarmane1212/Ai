@@ -223,6 +223,91 @@ function DashboardContent() {
     document.querySelector(`#${type}-news`)?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Local and Hyperlocal Issues Component
+  const LocalHyperlocalIssues = ({ issues }) => {
+    if (!issues || (!issues.local_issues?.length && !issues.hyperlocal_issues?.length)) {
+      return null;
+    }
+
+    return (
+      <div className="space-y-8 mt-8">
+        {issues.local_issues?.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">Local Issues</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {issues.local_issues.map((issue, index) => (
+                <div key={`local-${index}`} className="border p-4 rounded">
+                  <h4 className="font-medium">{issue.region || 'Unspecified Region'}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{issue.issue}</p>
+                  <div className="flex justify-between items-center mt-2 text-xs">
+                    <span className={`px-2 py-1 rounded ${
+                      issue.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
+                      issue.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {issue.sentiment || 'neutral'}
+                    </span>
+                    <span className="text-gray-500">{issue.impact_level || 'N/A'}</span>
+                  </div>
+                  {issue.public_opinion_summary && (
+                    <p className="text-xs text-gray-500 mt-2">{issue.public_opinion_summary}</p>
+                  )}
+                  {issue.suggested_interventions?.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium text-gray-700">Suggested Actions:</p>
+                      <ul className="list-disc list-inside text-xs text-gray-600">
+                        {issue.suggested_interventions.map((action, i) => (
+                          <li key={`action-${i}`}>{action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {issues.hyperlocal_issues?.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">Hyperlocal Issues</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {issues.hyperlocal_issues.map((issue, index) => (
+                <div key={`hyperlocal-${index}`} className="border p-4 rounded">
+                  <h4 className="font-medium">{issue.location || 'Unspecified Location'}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{issue.issue}</p>
+                  <div className="flex justify-between items-center mt-2 text-xs">
+                    <span className={`px-2 py-1 rounded ${
+                      issue.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
+                      issue.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {issue.sentiment || 'neutral'}
+                    </span>
+                    <span className="text-gray-500">{issue.impact_level || 'N/A'}</span>
+                  </div>
+                  {issue.public_opinion_summary && (
+                    <p className="text-xs text-gray-500 mt-2">{issue.public_opinion_summary}</p>
+                  )}
+                  {issue.suggested_interventions?.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium text-gray-700">Suggested Actions:</p>
+                      <ul className="list-disc list-inside text-xs text-gray-600">
+                        {issue.suggested_interventions.map((action, i) => (
+                          <li key={`action-${i}`}>{action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Sentiment Analysis Section Component
   const SentimentAnalysisSection = () => {
     if (!searchResults || !sentimentData || Object.keys(sentimentData).length === 0) {
@@ -678,164 +763,214 @@ function DashboardContent() {
   };
 
   const handleSearch = async (e) => {
-    e.preventDefault();
-    
-    const query = searchTerm.trim();
-    if (!query || isLoading) return;
+    if (e) e.preventDefault();
+    if (!searchTerm.trim()) return;
 
     setIsLoading(true);
     setError('');
+    setSearchResults(null);
     setSelectedCaste(null);
-    setSaveSuccess(false);
+    setCasteData(getDefaultCasteData());
+    setSentimentData(getDefaultSentimentData());
+    setInsights(getDefaultInsights());
+    setTrends(getDefaultTrends());
+    setStrengthsWeaknesses(getDefaultStrengthsWeaknesses());
+    setRegionWiseAnalysis(getDefaultRegionWiseAnalysis());
+    setPlatformComparison(getDefaultPlatformComparison());
+    setDemographicSupport(getDefaultDemographicSupport());
+    setLeaderProfile([]);
+    setExecutiveSummary('');
     setReportLink('');
+    setSaveSuccess(false);
 
     try {
-      // Reset data while loading
-      setCasteData({});
-      setSentimentData({});
-      setInsights(getDefaultInsights());
-      setTrends(getDefaultTrends());
-
-      // Prepare request body with all filter parameters
-      const requestBody = {
-        query: query,
-        analysisType: 'caste_analysis',
-        region: filters.region,
-        timeRange: filters.timeRange,
-        detailed: filters.detailed,
-        includeNews: filters.includeNews,
-        includeTrends: filters.includeTrends,
-        // Include detailed analysis parameters
-        sentimentThreshold: filters.sentimentThreshold,
-        includeSentimentBreakdown: filters.includeSentimentBreakdown,
-        includeSourceAnalysis: filters.includeSourceAnalysis
+      // Helper function to handle API calls with error handling
+      const fetchWithRetry = async (url, options, retries = 1) => {
+        try {
+          const response = await fetch(url, options);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return await response.json();
+        } catch (error) {
+          if (retries > 0) {
+            console.warn(`Retrying ${url}... (${retries} attempts left)`);
+            return fetchWithRetry(url, options, retries - 1);
+          }
+          console.error(`Failed to fetch from ${url}:`, error);
+          return { error: `Failed to load data: ${error.message}` };
+        }
       };
 
-      // Add custom date range if custom time range is selected
-      if (filters.timeRange === 'custom') {
-        requestBody.customStartDate = filters.customStartDate;
-        requestBody.customEndDate = filters.customEndDate;
+      // Call all three APIs in parallel with error handling
+      const [searchData, localData, leadersData] = await Promise.all([
+        // Main search API
+        fetchWithRetry('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            query: searchTerm,
+            name: searchTerm,
+            analysisType: 'caste_analysis',
+            region: filters.region,
+            timeRange: filters.timeRange,
+            detailed: filters.detailed,
+            includeNews: filters.includeNews,
+            includeTrends: filters.includeTrends,
+            sentimentThreshold: filters.sentimentThreshold,
+            includeSentimentBreakdown: filters.includeSentimentBreakdown,
+            includeSourceAnalysis: filters.includeSourceAnalysis
+          })
+        }),
+        // Local and Hyperlocal API
+        fetchWithRetry('/api/localAndHyperlocal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            query: `Search for ${searchTerm} in local and hyperlocal context`,
+            name: searchTerm
+          })
+        }),
+        // Assembly Leaders API
+        fetchWithRetry('/api/assemblyLeaders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            query: `Search for ${searchTerm} in assembly leaders context`,
+            name: searchTerm
+          })
+        })
+      ]);
+
+      // Check for errors in any of the API responses
+      const apiErrors = [
+        searchData?.error && 'Search API: ' + searchData.error,
+        localData?.error && 'Local API: ' + localData.error,
+        leadersData?.error && 'Leaders API: ' + leadersData.error
+      ].filter(Boolean);
+
+      if (apiErrors.length > 0) {
+        console.warn('API warnings:', apiErrors);
+        // Continue processing with partial data, but show warning to user
+        setError(`Some data might be incomplete: ${apiErrors.join('; ')}`);
       }
 
-      console.log('Sending request to /api/search with filters:', requestBody);
-      
-      // Call the API endpoint with all filters
-      const response = await fetch('/api/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-      
-      console.log('Received response status:', response.status);
+      // Log processed responses for debugging
+      console.log('Search API response:', searchData);
+      console.log('Local API response:', localData);
+      console.log('Leaders API response:', leadersData);
 
-      if (!response.ok) {
-        console.error('Error response status:', response.status);
-        let errorData;
-        try {
-          errorData = await response.json();
-          console.error('Error response data:', errorData);
-        } catch (e) {
-          console.error('Failed to parse error response:', e);
-          throw new Error(`Server responded with status ${response.status}: ${response.statusText}`);
-        }
-        throw new Error(errorData.error || `Server error: ${response.statusText}`);
-      }
-
-      let responseData;
-      try {
-        const responseText = await response.text();
-        console.log('Raw response text:', responseText);
+      // Combine all data with proper fallbacks
+      const combinedData = {
+        // Main search data
+        ...(searchData || {}),
         
-        try {
-          responseData = JSON.parse(responseText);
-          console.log('Parsed response data:', responseData);
-        } catch (e) {
-          console.error('Failed to parse JSON response:', e);
-          throw new Error('Invalid JSON response from server');
-        }
-      } catch (e) {
-        console.error('Failed to read response:', e);
-        throw new Error('Failed to read server response');
-      }
+        // Local and hyperlocal data with proper nesting
+        local_hyperlocal_issues: localData?.local_hyperlocal_issues || {
+          local_issues: [],
+          hyperlocal_issues: []
+        },
+        
+        // Assembly leaders data with proper nesting
+        assembly_leader_report: leadersData?.assembly_leader_report || {
+          key_issues: []
+        },
+        
+        // Ensure query and timestamp are always set
+        query: searchTerm,
+        timestamp: new Date().toISOString()
+      };
       
-      if (!responseData) {
-        throw new Error('Received empty response from server');
-      }
-      
-      if (responseData.success === false) {
-        console.error('Error in response:', responseData);
-        throw new Error(responseData.error || 'Request failed');
-      }
-      
-      // Extract the actual data (remove success flag if present)
-      const { success, ...data } = responseData;
-      
-      // Validate required fields with more detailed logging
-      if (!data.caste_distribution) {
-        console.error('Missing caste_distribution in response');
-      }
-      if (!data.sentiment_analysis) {
-        console.error('Missing sentiment_analysis in response');
-      }
-      
-      if (!data.caste_distribution || !data.sentiment_analysis) {
-        console.error('Incomplete response data:', JSON.stringify(data, null, 2));
-        throw new Error('Incomplete data received from server');
-      }
-      
-      // Process and validate the API response data
+      console.log('Combined data with local issues:', JSON.stringify({
+        local_issues: combinedData.local_hyperlocal_issues?.local_issues,
+        hyperlocal_issues: combinedData.local_hyperlocal_issues?.hyperlocal_issues
+      }, null, 2));
+
       // Calculate total results based on news items if available
-      const newsCount = data.news ? 
-        (data.news.positive?.length || 0) + 
-        (data.news.negative?.length || 0) + 
-        (data.news.neutral?.length || 0) : 0;
-        
+      const newsCount = combinedData.news ? 
+        ((combinedData.news.positive?.length || 0) + 
+        (combinedData.news.negative?.length || 0) + 
+        (combinedData.news.neutral?.length || 0)) : 0;
+      
+      // Prepare the complete data structure with all required fields
       const processedData = {
-        query,
-        timestamp: new Date().toISOString(),
-        totalResults: newsCount > 0 ? newsCount : 1, // Default to 1 if no news items but analysis exists
-        caste_distribution: data.caste_distribution || {},
-        sentiment_analysis: data.sentiment_analysis || {},
-        // Handle both key_insights and insights for backward compatibility
+        // Spread the combined data first
+        ...combinedData,
+        
+        // Ensure all required top-level fields exist
+        caste_distribution: combinedData.caste_distribution || {
+          general: 0,
+          obc: 0,
+          sc: 0,
+          st: 0,
+          others: 0
+        },
+        
+        sentiment_analysis: combinedData.sentiment_analysis || {
+          general: { positive: 0, neutral: 0, negative: 0 },
+          obc: { positive: 0, neutral: 0, negative: 0 },
+          sc: { positive: 0, neutral: 0, negative: 0 },
+          st: { positive: 0, neutral: 0, negative: 0 },
+          others: { positive: 0, neutral: 0, negative: 0 }
+        },
+        
+        // Structure insights properly
         insights: {
-          key_findings: data.key_insights || data.insights?.key_findings || [],
-          recommendations: data.insights?.recommendations || []
+          key_findings: combinedData.key_insights || combinedData.insights?.key_findings || [
+            'No key findings available',
+            'Please try a different search term',
+            'Check back later for updates'
+          ],
+          recommendations: combinedData.insights?.recommendations || [
+            'Try a different search term',
+            'Check your internet connection',
+            'Contact support if the issue persists'
+          ]
         },
-        // Handle trends data
+        
+        // Structure trends with fallbacks
         trends: {
-          overall_trend: data.trends?.overall_trend || data.trends?.[0] || 'No trend data available',
-          notable_changes: Array.isArray(data.trends) ? data.trends.slice(1) : (data.trends?.notable_changes || [])
+          overall_trend: combinedData.trends?.overall_trend || 'No trend data available',
+          notable_changes: Array.isArray(combinedData.trends) 
+            ? combinedData.trends.slice(1) 
+            : (combinedData.trends?.notable_changes || [
+                'No notable changes recorded',
+                'Try a different search term',
+                'Check back later for updates'
+              ])
         },
-        // Include news if available
-        news: data.news || {
-          positive: [],
-          negative: [],
-          neutral: []
+        
+        // Ensure news structure exists
+        news: {
+          positive: combinedData.news?.positive || [],
+          negative: combinedData.news?.negative || [],
+          neutral: combinedData.news?.neutral || []
         },
-        // Add new detailed analysis fields
-        key_strengths_weaknesses: data.key_strengths_weaknesses || getDefaultStrengthsWeaknesses(),
-        region_wise_analysis: data.region_wise_analysis || getDefaultRegionWiseAnalysis(),
-        platform_sentiment_comparison: data.platform_sentiment_comparison || getDefaultPlatformComparison(),
-        demographic_support_base: data.demographic_support_base || getDefaultDemographicSupport(),
-        // Add executive summary and leader profile
-        executive_summary: data.executive_summary || [],
-        leader_profile: data.leader_profile || []
+        
+        // Set all other required fields with defaults
+        key_strengths_weaknesses: combinedData.key_strengths_weaknesses || getDefaultStrengthsWeaknesses(),
+        region_wise_analysis: combinedData.region_wise_analysis || getDefaultRegionWiseAnalysis(),
+        platform_sentiment_comparison: combinedData.platform_sentiment_comparison || getDefaultPlatformComparison(),
+        demographic_support_base: combinedData.demographic_support_base || getDefaultDemographicSupport(),
+        executive_summary: combinedData.executive_summary || 'No summary available. Try a different search term or check back later.',
+        leader_profile: Array.isArray(combinedData.leader_profile) ? combinedData.leader_profile : [],
+        totalResults: newsCount > 0 ? newsCount : 1
       };
 
       console.log('Processed data:', processedData);
       
       // Update all state with the processed data
       setSearchResults(processedData);
-      setCasteData(processedData.caste_distribution || {});
-      setSentimentData(processedData.sentiment_analysis || {});
-      setInsights(processedData.insights || getDefaultInsights());
-      setTrends(processedData.trends || getDefaultTrends());
-      setStrengthsWeaknesses(processedData.key_strengths_weaknesses || getDefaultStrengthsWeaknesses());
-      setRegionWiseAnalysis(processedData.region_wise_analysis || getDefaultRegionWiseAnalysis());
-      setPlatformComparison(processedData.platform_sentiment_comparison || getDefaultPlatformComparison());
-      setDemographicSupport(processedData.demographic_support_base || getDefaultDemographicSupport());
+      setCasteData(processedData.caste_distribution);
+      setSentimentData(processedData.sentiment_analysis);
+      setInsights(processedData.insights);
+      setTrends(processedData.trends);
+      setStrengthsWeaknesses(processedData.key_strengths_weaknesses);
+      setRegionWiseAnalysis(processedData.region_wise_analysis);
+      setPlatformComparison(processedData.platform_sentiment_comparison);
+      setDemographicSupport(processedData.demographic_support_base);
+      setLeaderProfile(processedData.leader_profile);
+      setExecutiveSummary(processedData.executive_summary);
       
     } catch (error) {
       console.error('Search error:', error);
@@ -2020,6 +2155,14 @@ function DashboardContent() {
                       </ul>
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {/* Local and Hyperlocal Issues */}
+              {searchResults.local_hyperlocal_issues && (
+                <div className="mt-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Local & Hyperlocal Issues</h2>
+                  <LocalHyperlocalIssues issues={searchResults.local_hyperlocal_issues} />
                 </div>
               )}
               

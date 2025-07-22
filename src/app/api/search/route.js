@@ -65,31 +65,7 @@ async function getReport(reportId, password = null) {
   return report;
 }
 
-// Enhanced sentiment analysis function
-async function analyzeSentiment(text) {
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert sentiment analyzer. Analyze the sentiment of the following text and provide a detailed analysis.'
-        },
-        {
-          role: 'user',
-          content: `Analyze the sentiment of this text and provide a detailed analysis including sentiment score (-1 to 1), confidence level (0-1), and key phrases that influenced the sentiment.\n\nText: ${text}`
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 200
-    });
-    
-    return response.choices[0]?.message?.content || 'No analysis available';
-  } catch (error) {
-    console.error('Error in sentiment analysis:', error);
-    return 'Sentiment analysis failed';
-  }
-}
+
 
 // Generate dynamic caste analysis using GPT
 async function generateCasteAnalysis(query, {
@@ -122,8 +98,10 @@ async function generateCasteAnalysis(query, {
     region && region !== 'all' ? `, specifically in the ${region} region` : ''
   }${dateRangeText ? `, covering ${dateRangeText}` : ''}.
   
-  IMPORTANT: Your response MUST include the following sections with COMPLETE data:
-  
+  IMPORTANT: Your response MUST include the following sections with COMPLETE data, and generate the news items section FIRST.
+
+If the response reaches the token limit or cannot fit all sections, prioritize generating the FULL 'news' section first — with EXACTLY 10 positive, 10 negative, and 5 neutral news items. You may reduce details or truncate other sections (like leader_profile, analysis) if necessary.
+
   1. leader_profile: An array of 3-5 key leaders/influencers related to the topic, each with:
      - name: Full name (REQUIRED)
      - position: Current position/role (REQUIRED)
@@ -437,7 +415,7 @@ async function generateCasteAnalysis(query, {
   `;
 
   try {
-    console.log('Sending request to OpenAI with query:', query);
+    // console.log('Sending request to OpenAI with query:', query);
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: [
@@ -460,7 +438,7 @@ async function generateCasteAnalysis(query, {
       throw new Error('No content in response from OpenAI');
     }
 
-    console.log('Raw response from OpenAI:', content);
+    // console.log('Raw response from OpenAI:', content);
 
     // Clean and parse the JSON response
     let cleanedContent = content.trim();
@@ -472,7 +450,7 @@ async function generateCasteAnalysis(query, {
       cleanedContent = cleanedContent.replace(/^```\n?|```$/g, '');
     }
     
-    console.log('Cleaned content:', cleanedContent);
+    // console.log('Cleaned content:', cleanedContent);
     
     try {
       const result = JSON.parse(cleanedContent);
@@ -627,7 +605,7 @@ async function generateCasteAnalysis(query, {
         }
       }
 
-      console.log('Successfully parsed response');
+      // console.log('Successfully parsed response');
       return result;
     } catch (parseError) {
       console.error('Failed to parse JSON:', parseError);
