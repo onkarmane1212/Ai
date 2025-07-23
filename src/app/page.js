@@ -223,6 +223,150 @@ function DashboardContent() {
     document.querySelector(`#${type}-news`)?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Assembly Leader Report Component
+  const AssemblyLeaderReport = ({ report }) => {
+    console.log('Assembly Leader Report Data:', JSON.stringify(report, null, 2));
+    
+    if (!report || !report.assembly_leader_report) {
+      console.log('No report data or assembly_leader_report not found');
+      return null;
+    }
+    
+    const { assembly_leader_report: leaderReport } = report;
+    
+    if (!leaderReport.key_issues?.length && !leaderReport.executive_summary) {
+      console.log('No key issues or executive summary in report');
+      return null;
+    }
+
+    return (
+      <div className="mt-8 bg-white p-6 rounded-lg shadow">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Assembly Leader Report</h2>
+        
+        {/* MLA and Constituency Information */}
+        <div className="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-blue-800">Constituency</h3>
+              <p className="text-gray-700">{leaderReport?.constituency || 'N/A'}</p>
+            </div>
+            
+            {leaderReport.mla && (
+              <div>
+                <h3 className="text-lg font-semibold text-blue-800">MLA Information</h3>
+                <div className="space-y-1">
+                  <p className="text-gray-700">
+                    <span className="font-medium">Name:</span> {leaderReport.mla.name || 'N/A'}
+                  </p>
+                  <p className="text-gray-700">
+                    <span className="font-medium">Party:</span> {leaderReport.mla.party || 'N/A'}
+                  </p>
+                  {leaderReport.mla.term_start && (
+                    <p className="text-gray-700">
+                      <span className="font-medium">Term Start:</span> {leaderReport.mla.term_start}
+                    </p>
+                  )}
+                  
+                  {leaderReport.mla.contact && (
+                    <div className="mt-2 pt-2 border-t border-blue-100">
+                      <h4 className="text-sm font-medium text-blue-700 mb-1">Contact Information:</h4>
+                      <ul className="text-xs text-gray-600 space-y-1">
+                        {leaderReport.mla.contact.mobile && (
+                          <li className="flex items-center">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                            {leaderReport.mla.contact.mobile}
+                          </li>
+                        )}
+                        {leaderReport.mla.contact.email && (
+                          <li className="flex items-center">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            {leaderReport.mla.contact.email}
+                          </li>
+                        )}
+                        {leaderReport.mla.contact.office_address && (
+                          <li className="flex items-start">
+                            <svg className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{leaderReport.mla.contact.office_address}</span>
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {leaderReport.executive_summary && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-3">Executive Summary</h3>
+            <p className="text-gray-700">{leaderReport.executive_summary}</p>
+          </div>
+        )}
+        
+        {leaderReport.key_issues?.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Key Issues</h3>
+            <div className="space-y-6">
+              {leaderReport.key_issues.map((issue, index) => (
+                <div key={`issue-${index}`} className="border-l-4 border-blue-500 pl-4 py-2">
+                  <h4 className="font-medium text-gray-900">{issue.issue}</h4>
+                  <div className="flex items-center mt-1 mb-2">
+                    <span className={`px-2 py-1 text-xs rounded ${
+                      issue.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
+                      issue.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {issue.sentiment || 'neutral'}
+                    </span>
+                    <span className="ml-2 text-xs text-gray-500">
+                      Impact: {issue.impact_level || 'N/A'}
+                    </span>
+                  </div>
+                  
+                  {issue.public_opinion_summary && (
+                    <div className="mt-2 bg-gray-50 p-3 rounded">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium">Public Opinion:</span> {issue.public_opinion_summary}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {issue.leader_response && (
+                    <div className="mt-2 bg-blue-50 p-3 rounded">
+                      <p className="text-sm text-blue-800">
+                        <span className="font-medium">Leader&apos;s Response:</span> {issue.leader_response}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {issue.suggested_interventions?.length > 0 && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-gray-700 mb-1">Suggested Interventions:</h5>
+                      <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                        {issue.suggested_interventions.map((action, i) => (
+                          <li key={`action-${i}`} className="ml-4">{action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Local and Hyperlocal Issues Component
   const LocalHyperlocalIssues = ({ issues }) => {
     if (!issues || (!issues.local_issues?.length && !issues.hyperlocal_issues?.length)) {
@@ -873,13 +1017,24 @@ function DashboardContent() {
         
         // Assembly leaders data with proper nesting
         assembly_leader_report: leadersData?.assembly_leader_report || {
+          constituency: '',
+          mla: {
+            name: '',
+            party: '',
+            term_start: '',
+            contact: {
+              mobile: '',
+              email: '',
+              office_address: ''
+            }
+          },
           key_issues: []
         },
-        
         // Ensure query and timestamp are always set
         query: searchTerm,
         timestamp: new Date().toISOString()
       };
+      console.log('Combined data assembly_leader_report :',  combinedData.assembly_leader_report),
       
       console.log('Combined data with local issues:', JSON.stringify({
         local_issues: combinedData.local_hyperlocal_issues?.local_issues,
@@ -2155,6 +2310,13 @@ function DashboardContent() {
                       </ul>
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {/* Assembly Leader Report */}
+              {searchResults.assembly_leader_report && (
+                <div className="mt-8">
+                  <AssemblyLeaderReport report={searchResults.assembly_leader_report} />
                 </div>
               )}
               

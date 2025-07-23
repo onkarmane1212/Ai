@@ -23,14 +23,14 @@ try {
 }
 
 const systemPrompt = (name) => `
-You are a data analyst for Andhra Pradesh governance. Generate a concise JSON report with local and hyperlocal issues.
+You are a data analyst for ${name} constituency governance. Generate a concise JSON report with local and hyperlocal issues.
 
 ${name ? `Focus on issues related to ${name}.` : 'Focus on current issues.'}
 
 Guidelines:
 - Return exactly 10 local_issues and 10 hyperlocal_issues
-- Mention real-sounding towns and villages in Andhra Pradesh
-- Keep issues specific and relevant to Andhra Pradesh
+- Mention real-sounding towns and villages in ${name} constituency
+- Keep issues specific and relevant to ${name} constituency
 - Suggested interventions should be specific and actionable (e.g., "install solar-powered streetlights", "deploy mobile health clinics")
 - Sentiment and impact_level must vary
 - Ensure the JSON is valid and parsable
@@ -63,7 +63,7 @@ Respond ONLY with valid JSON matching this structure:
 `;
 
 export async function POST(req) {
-  console.log('Received request to localAndHyperlocal API');
+//   console.log('Received request to localAndHyperlocal API');
 
   try {
     const body = await req.json();
@@ -78,7 +78,7 @@ export async function POST(req) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes
 
-    console.log('Calling OpenAI API...');
+    // console.log('Calling OpenAI API...');
     const completion = await openai.chat.completions.create(
       {
         model: 'gpt-4-turbo-preview',
@@ -96,7 +96,7 @@ export async function POST(req) {
     clearTimeout(timeoutId);
 
     const rawContent = completion.choices?.[0]?.message?.content;
-    console.log('OpenAI response (first 200 chars):', rawContent?.slice(0, 200));
+    // console.log('OpenAI response (first 200 chars):', rawContent?.slice(0, 200));
 
     if (!rawContent || typeof rawContent !== 'string') {
       return NextResponse.json({ error: 'Invalid or empty response from OpenAI' }, { status: 502 });

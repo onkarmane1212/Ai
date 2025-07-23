@@ -10,7 +10,7 @@ const openai = new OpenAI({
 });
 
 const systemPrompt = (name) => `
-You are a civic data analyst specializing in political accountability in Andhra Pradesh.
+You are a civic data analyst specializing in political accountability in ${name} constituency.
 
 Generate a structured JSON report that helps citizens understand their Assembly Constituency leadership and related issues. ${name ? `Focus on information related to ${name} and their political impact.` : ''}
 
@@ -47,22 +47,22 @@ Use the schema below:
 }
 
 Guidelines:
-- Always include 5 key_issues per constituency.
-- Use realistic names and parties from Andhra Pradesh (no fake parties).
-- Suggested interventions must be concrete and feasible.
+- Always include 10 key_issues per constituency.
+- Use realistic names and parties from ${name} constituency (no fake parties).
+- Suggested interventions must be concrete and feasible and include also ${name}.
 - Contact details should appear realistic.
 - Ensure valid and complete JSON with no trailing commas or formatting issues.
 `;
 
 export async function POST(req) {
-  console.log('Received request to assemblyLeaders API');
+//   console.log('Received request to assemblyLeaders API');
   
   try {
     // Parse and validate request body
     let requestBody;
     try {
       requestBody = await req.json();
-      console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    //   console.log('Request body assemblyLeaders:', JSON.stringify(requestBody, null, 2));
     } catch (parseError) {
       console.error('Error parsing request body:', parseError);
       return NextResponse.json(
@@ -82,10 +82,10 @@ export async function POST(req) {
       );
     }
 
-    console.log(`Processing request for ${name || query}`);
+    // console.log(`Processing request for ${name || query}`);
     // Set default values for parameters
-    const assembly_constituency = 'Guntur West';
-    const region = 'Andhra Pradesh';
+    const assembly_constituency = `${name} constituency`;
+    const region = `${name} constituency`;
     const date_range = 'last 6 months';
 
     const userPrompt = `
