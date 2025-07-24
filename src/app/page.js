@@ -128,11 +128,7 @@ const getSentimentData = (sentimentData, caste) => {
   }
 };
 
-// Helper function to get caste distribution percentage (ensures it's between 0-100)
-const getCastePercentage = (casteData, caste) => {
-  const percentage = casteData[caste] || 0;
-  return Math.min(Math.max(0, percentage), 100);
-};
+
 
 // Handle caste selection from pie chart
 const handleCasteSelect = (casteData, elements, setSelectedCaste) => {
@@ -165,6 +161,7 @@ function DashboardContent() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [reportLink, setReportLink] = useState('');
   const [isProtected, setIsProtected] = useState(true);
+  const [politicalStrategyReport, setPoliticalStrategyReport] = useState(null);
   
   const [filters, setFilters] = useState({
     timeRange: '1m',
@@ -179,12 +176,7 @@ function DashboardContent() {
     includeSourceAnalysis: true
   });
   
-  const toggleDetailedView = () => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      detailed: !prevFilters.detailed
-    }));
-  };
+  
   
   // Available regions for filtering
   const regions = [
@@ -206,21 +198,120 @@ function DashboardContent() {
   
 
   
-  // Get paginated news items
-  const getPaginatedNews = (items, type) => {
-    if (!items) return [];
-    const start = (newsPage[type] - 1) * itemsPerPage;
-    return items.slice(start, start + itemsPerPage);
-  };
   
-  // Handle page change
-  const handlePageChange = (type, direction) => {
-    setNewsPage(prev => ({
-      ...prev,
-      [type]: Math.max(1, prev[type] + (direction === 'next' ? 1 : -1))
-    }));
-    // Scroll to top of news section
-    document.querySelector(`#${type}-news`)?.scrollIntoView({ behavior: 'smooth' });
+
+  // Political Strategy Report Component
+  const PoliticalStrategyReport = ({ report }) => {
+    if (!report || !report.political_strategy_report) {
+      console.log('No political strategy report data found');
+      return null;
+    }
+
+    const { political_strategy_report: psr } = report;
+
+    return (
+      <div className="mt-8 bg-white p-6 rounded-lg shadow">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Political Strategy Report</h2>
+        
+        {/* Overview Section */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Overview</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-800">Leader</h4>
+              <p className="text-gray-700">{psr.leader || 'N/A'}</p>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h4 className="font-medium text-green-800">Party</h4>
+              <p className="text-gray-700">{psr.party || 'N/A'}</p>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <h4 className="font-medium text-purple-800">Report Date</h4>
+              <p className="text-gray-700">{psr.report_date || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Sentiment Analysis */}
+        {psr.sections?.sentiment_analysis && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4">Sentiment Analysis</h3>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="mb-2">
+                <span className="font-medium">Overall Sentiment:</span>{' '}
+                <span className={`font-semibold ${
+                  psr.sections.sentiment_analysis.overall_sentiment === 'positive' ? 'text-green-600' :
+                  psr.sections.sentiment_analysis.overall_sentiment === 'negative' ? 'text-red-600' :
+                  'text-yellow-600'
+                }`}>
+                  {psr.sections.sentiment_analysis.overall_sentiment || 'N/A'}
+                </span>
+              </p>
+              
+              {psr.sections.sentiment_analysis.sentiment_breakdown && (
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Sentiment Breakdown</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white p-3 rounded border">
+                      <p className="text-green-600 font-medium">Positive</p>
+                      <p>{psr.sections.sentiment_analysis.sentiment_breakdown.positive || '0%'}</p>
+                    </div>
+                    <div className="bg-white p-3 rounded border">
+                      <p className="text-yellow-500 font-medium">Neutral</p>
+                      <p>{psr.sections.sentiment_analysis.sentiment_breakdown.neutral || '0%'}</p>
+                    </div>
+                    <div className="bg-white p-3 rounded border">
+                      <p className="text-red-600 font-medium">Negative</p>
+                      <p>{psr.sections.sentiment_analysis.sentiment_breakdown.negative || '0%'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Key Issues */}
+        {psr.sections?.key_issues?.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4">Key Issues</h3>
+            <div className="space-y-4">
+              {psr.sections.key_issues.map((issue, index) => (
+                <div key={index} className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50">
+                  <h4 className="font-medium">{issue.issue}</h4>
+                  <p className="text-sm text-gray-600">{issue.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Social Media Performance */}
+        {psr.sections?.social_media_performance && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4">Social Media Performance</h3>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="mb-4">{psr.sections.social_media_performance.summary}</p>
+              
+              {psr.sections.social_media_performance.platform_comparison?.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Platform Comparison</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {psr.sections.social_media_performance.platform_comparison.map((platform, i) => (
+                      <div key={i} className="bg-white p-3 rounded border">
+                        <p className="font-medium">{platform.platform}</p>
+                        <p className="text-sm text-gray-600">Followers: {platform.follower_count}</p>
+                        <p className="text-sm text-gray-600">Engagement: {platform.engagement_rate}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Assembly Leader Report Component
@@ -816,14 +907,16 @@ function DashboardContent() {
 
       setTrends({
         overall_trend: searchResults.trends?.overall_trend || '',
-        notable_changes: Array.isArray(searchResults.trends?.notable_changes) ?
-          searchResults.trends.notable_changes :
-          []
+        notable_changes: Array.isArray(searchResults.trends) 
+          ? searchResults.trends.slice(1) 
+          : (searchResults.trends?.notable_changes || [
+              'No notable changes recorded',
+              'Try a different search term',
+              'Check back later for updates'
+            ])
       });
     }
   }, [searchResults, selectedCaste]);
-
-
 
   // Handle downloading the report as PDF
   const handleSaveReport = async () => {
@@ -926,28 +1019,41 @@ function DashboardContent() {
     setExecutiveSummary('');
     setReportLink('');
     setSaveSuccess(false);
+    setPoliticalStrategyReport(null);
 
     try {
-      // Helper function to handle API calls with error handling
+      // Helper function to handle API calls with error handling and logging
       const fetchWithRetry = async (url, options, retries = 1) => {
+        console.log(`Attempting to call ${url} with options:`, options);
         try {
           const response = await fetch(url, options);
+          console.log(`Response status for ${url}:`, response.status);
+          
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            console.error(`HTTP error for ${url}: ${response.status} - ${errorText}`);
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
           }
-          return await response.json();
+          
+          const data = await response.json();
+          console.log(`Successfully fetched from ${url}:`, data);
+          return data;
+          
         } catch (error) {
+          console.error(`Error in fetchWithRetry for ${url}:`, error);
           if (retries > 0) {
             console.warn(`Retrying ${url}... (${retries} attempts left)`);
+            // Add a small delay before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
             return fetchWithRetry(url, options, retries - 1);
           }
-          console.error(`Failed to fetch from ${url}:`, error);
+          console.error(`Failed to fetch from ${url} after retries:`, error);
           return { error: `Failed to load data: ${error.message}` };
         }
       };
 
-      // Call all three APIs in parallel with error handling
-      const [searchData, localData, leadersData] = await Promise.all([
+      // Call all four APIs in parallel with error handling
+      const [searchData, localData, leadersData, politicalStrategyData] = await Promise.all([
         // Main search API
         fetchWithRetry('/api/search', {
           method: 'POST',
@@ -983,6 +1089,18 @@ function DashboardContent() {
             query: `Search for ${searchTerm} in assembly leaders context`,
             name: searchTerm
           })
+        }),
+        // Political Strategy Report API
+        fetchWithRetry('/api/politicalStrategyReport', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            query: searchTerm,
+            region: filters.region,
+            timeRange: filters.timeRange,
+            customStartDate: filters.customStartDate,
+            customEndDate: filters.customEndDate
+          })
         })
       ]);
 
@@ -990,7 +1108,8 @@ function DashboardContent() {
       const apiErrors = [
         searchData?.error && 'Search API: ' + searchData.error,
         localData?.error && 'Local API: ' + localData.error,
-        leadersData?.error && 'Leaders API: ' + leadersData.error
+        leadersData?.error && 'Leaders API: ' + leadersData.error,
+        politicalStrategyData?.error && 'Political Strategy API: ' + politicalStrategyData.error
       ].filter(Boolean);
 
       if (apiErrors.length > 0) {
@@ -1003,6 +1122,7 @@ function DashboardContent() {
       console.log('Search API response:', searchData);
       console.log('Local API response:', localData);
       console.log('Leaders API response:', leadersData);
+      console.log('Political Strategy API response:', politicalStrategyData);
 
       // Combine all data with proper fallbacks
       const combinedData = {
@@ -1016,7 +1136,7 @@ function DashboardContent() {
         },
         
         // Assembly leaders data with proper nesting
-        assembly_leader_report: leadersData?.assembly_leader_report || {
+        assembly_leader_report: leadersData?.data?.assembly_leader_report || leadersData?.assembly_leader_report || {
           constituency: '',
           mla: {
             name: '',
@@ -1029,6 +1149,14 @@ function DashboardContent() {
             }
           },
           key_issues: []
+        },
+        
+        // Political Strategy Report data - extract the nested political_strategy_report from the response
+        political_strategy_report: politicalStrategyData?.political_strategy_report || {
+          social_media_performance: {},
+          key_issues: [],
+          electoral_analysis: {},
+          policy_recommendations: []
         },
         // Ensure query and timestamp are always set
         query: searchTerm,
@@ -1126,6 +1254,7 @@ function DashboardContent() {
       setDemographicSupport(processedData.demographic_support_base);
       setLeaderProfile(processedData.leader_profile);
       setExecutiveSummary(processedData.executive_summary);
+      setPoliticalStrategyReport(processedData.political_strategy_report);
       
     } catch (error) {
       console.error('Search error:', error);
@@ -1549,10 +1678,10 @@ function DashboardContent() {
               <div className="bg-white p-4 rounded-lg shadow">
                 <div className="text-gray-500 text-sm font-medium mb-1">Time Period</div>
                 <div className="text-2xl font-bold mb-2">
-                  {filters.timeRange === '24h' ? '24 Hours' :
-                   filters.timeRange === '7d' ? '7 Days' :
-                   filters.timeRange === '30d' ? '30 Days' :
-                   filters.timeRange === '90d' ? '90 Days' :
+                  {filters.timeRange === '90d' ? '90 Days' :
+                   filters.timeRange === '6m' ? '6 Months' :
+                   filters.timeRange === '1y' ? '1 Year' :
+                   filters.timeRange === '2y' ? '2 Years' :
                    filters.timeRange === 'custom' ? 'Custom Range' : 'All Time'}
                 </div>
                 {filters.timeRange === 'custom' && filters.customStartDate && filters.customEndDate && (
@@ -1565,6 +1694,8 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
+            
+            
             
             <div className="bg-white shadow rounded-lg p-6 mb-8">
               <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
@@ -1586,28 +1717,7 @@ function DashboardContent() {
                     </svg>
                     Refresh
                   </button>
-                  <button
-  onClick={handleSaveReport}
-  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center gap-2 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-  disabled={isSaving || !searchResults}
->
-  {isSaving ? (
-    <>
-      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      Generating PDF...
-    </>
-  ) : (
-    <>
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-      </svg>
-      Export PDF
-    </>
-  )}
-</button>
+                 
                 </div>
               </div>
               
@@ -1928,6 +2038,14 @@ function DashboardContent() {
                     </div>
                   </div>
                 </div>
+              )}
+              {/* Render Assembly Leader Report if data exists */}
+            {searchResults.assembly_leader_report && (
+              <AssemblyLeaderReport report={searchResults} />
+            )}
+              {/* Political Strategy Report */}
+              {searchResults.political_strategy_report && (
+                <PoliticalStrategyReport report={searchResults} />
               )}
               
               {/* News Section */}
