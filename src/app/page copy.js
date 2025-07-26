@@ -128,11 +128,7 @@ const getSentimentData = (sentimentData, caste) => {
   }
 };
 
-// Helper function to get caste distribution percentage (ensures it's between 0-100)
-const getCastePercentage = (casteData, caste) => {
-  const percentage = casteData[caste] || 0;
-  return Math.min(Math.max(0, percentage), 100);
-};
+
 
 // Handle caste selection from pie chart
 const handleCasteSelect = (casteData, elements, setSelectedCaste) => {
@@ -165,6 +161,8 @@ function DashboardContent() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [reportLink, setReportLink] = useState('');
   const [isProtected, setIsProtected] = useState(true);
+  const [politicalStrategyReport, setPoliticalStrategyReport] = useState(null);
+  const [localData, setLocalData] = useState(null);
   
   const [filters, setFilters] = useState({
     timeRange: '1m',
@@ -179,12 +177,7 @@ function DashboardContent() {
     includeSourceAnalysis: true
   });
   
-  const toggleDetailedView = () => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      detailed: !prevFilters.detailed
-    }));
-  };
+  
   
   // Available regions for filtering
   const regions = [
@@ -206,54 +199,396 @@ function DashboardContent() {
   
 
   
-  // Get paginated news items
-  const getPaginatedNews = (items, type) => {
-    if (!items) return [];
-    const start = (newsPage[type] - 1) * itemsPerPage;
-    return items.slice(start, start + itemsPerPage);
-  };
   
-  // Handle page change
-  const handlePageChange = (type, direction) => {
-    setNewsPage(prev => ({
-      ...prev,
-      [type]: Math.max(1, prev[type] + (direction === 'next' ? 1 : -1))
-    }));
-    // Scroll to top of news section
-    document.querySelector(`#${type}-news`)?.scrollIntoView({ behavior: 'smooth' });
+
+  // Political Strategy Report Component
+  const PoliticalStrategyReport = ({ report }) => {
+    if (!report || !report.political_strategy_report) {
+      console.log('No political strategy report data found');
+      return null;
+    }
+
+    const { political_strategy_report: psr } = report;
+
+    return (
+      <div className="mt-8 bg-white p-6 rounded-lg shadow">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Political Strategy Report</h2>
+        
+        {/* Overview Section */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Overview</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-800">Leader</h4>
+              <p className="text-gray-700">{psr.leader || 'N/A'}</p>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h4 className="font-medium text-green-800">Party</h4>
+              <p className="text-gray-700">{psr.party || 'N/A'}</p>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <h4 className="font-medium text-purple-800">Report Date</h4>
+              <p className="text-gray-700">{psr.report_date || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Sentiment Analysis */}
+        {psr.sections?.sentiment_analysis && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4">Sentiment Analysis</h3>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="mb-2">
+                <span className="font-medium">Overall Sentiment:</span>{' '}
+                <span className={`font-semibold ${
+                  psr.sections.sentiment_analysis.overall_sentiment === 'positive' ? 'text-green-600' :
+                  psr.sections.sentiment_analysis.overall_sentiment === 'negative' ? 'text-red-600' :
+                  'text-yellow-600'
+                }`}>
+                  {psr.sections.sentiment_analysis.overall_sentiment || 'N/A'}
+                </span>
+              </p>
+              
+              {psr.sections.sentiment_analysis.sentiment_breakdown && (
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Sentiment Breakdown</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white p-3 rounded border">
+                      <p className="text-green-600 font-medium">Positive</p>
+                      <p>{psr.sections.sentiment_analysis.sentiment_breakdown.positive || '0%'}</p>
+                    </div>
+                    <div className="bg-white p-3 rounded border">
+                      <p className="text-yellow-500 font-medium">Neutral</p>
+                      <p>{psr.sections.sentiment_analysis.sentiment_breakdown.neutral || '0%'}</p>
+                    </div>
+                    <div className="bg-white p-3 rounded border">
+                      <p className="text-red-600 font-medium">Negative</p>
+                      <p>{psr.sections.sentiment_analysis.sentiment_breakdown.negative || '0%'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Key Issues */}
+        {psr.sections?.key_issues?.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4">Key Issues</h3>
+            <div className="space-y-4">
+              {psr.sections.key_issues.map((issue, index) => (
+                <div key={index} className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50">
+                  <h4 className="font-medium">{issue.issue}</h4>
+                  <p className="text-sm text-gray-600">{issue.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Social Media Performance */}
+        {psr.sections?.social_media_performance && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4">Social Media Performance</h3>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="mb-4">{psr.sections.social_media_performance.summary}</p>
+              
+              {psr.sections.social_media_performance.platform_comparison?.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Platform Comparison</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {psr.sections.social_media_performance.platform_comparison.map((platform, i) => (
+                      <div key={i} className="bg-white p-3 rounded border">
+                        <p className="font-medium">{platform.platform}</p>
+                        <p className="text-sm text-gray-600">Followers: {platform.follower_count}</p>
+                        <p className="text-sm text-gray-600">Engagement: {platform.engagement_rate}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Assembly Leader Report Component
+  const AssemblyLeaderReport = ({ report }) => {
+    console.log('Assembly Leader Report Data:', JSON.stringify(report, null, 2));
+    
+    if (!report || !report.assembly_leader_report) {
+      console.log('No report data or assembly_leader_report not found');
+      return null;
+    }
+    
+    const { assembly_leader_report: leaderReport } = report;
+    
+    if (!leaderReport.key_issues?.length && !leaderReport.executive_summary) {
+      console.log('No key issues or executive summary in report');
+      return null;
+    }
+
+    return (
+      <div className="mt-8 bg-white p-6 rounded-lg shadow">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Assembly Leader Report</h2>
+        
+        {/* MLA and Constituency Information */}
+        <div className="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-blue-800">Constituency</h3>
+              <p className="text-gray-700">{leaderReport?.constituency || 'N/A'}</p>
+            </div>
+            
+            {leaderReport.mla && (
+              <div>
+                <h3 className="text-lg font-semibold text-blue-800">MLA Information</h3>
+                <div className="space-y-1">
+                  <p className="text-gray-700">
+                    <span className="font-medium">Name:</span> {leaderReport.mla.name || 'N/A'}
+                  </p>
+                  <p className="text-gray-700">
+                    <span className="font-medium">Party:</span> {leaderReport.mla.party || 'N/A'}
+                  </p>
+                  {leaderReport.mla.term_start && (
+                    <p className="text-gray-700">
+                      <span className="font-medium">Term Start:</span> {leaderReport.mla.term_start}
+                    </p>
+                  )}
+                  
+                  {leaderReport.mla.contact && (
+                    <div className="mt-2 pt-2 border-t border-blue-100">
+                      <h4 className="text-sm font-medium text-blue-700 mb-1">Contact Information:</h4>
+                      <ul className="text-xs text-gray-600 space-y-1">
+                        {leaderReport.mla.contact.mobile && (
+                          <li className="flex items-center">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                            {leaderReport.mla.contact.mobile}
+                          </li>
+                        )}
+                        {leaderReport.mla.contact.email && (
+                          <li className="flex items-center">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            {leaderReport.mla.contact.email}
+                          </li>
+                        )}
+                        {leaderReport.mla.contact.office_address && (
+                          <li className="flex items-start">
+                            <svg className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{leaderReport.mla.contact.office_address}</span>
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {leaderReport.executive_summary && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-3">Executive Summary</h3>
+            <p className="text-gray-700">{leaderReport.executive_summary}</p>
+          </div>
+        )}
+        
+        {leaderReport.key_issues?.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Key Issues</h3>
+            <div className="space-y-6">
+              {leaderReport.key_issues.map((issue, index) => (
+                <div key={`issue-${index}`} className="border-l-4 border-blue-500 pl-4 py-2">
+                  <h4 className="font-medium text-gray-900">{issue.issue}</h4>
+                  <div className="flex items-center mt-1 mb-2">
+                    <span className={`px-2 py-1 text-xs rounded ${
+                      issue.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
+                      issue.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {issue.sentiment || 'neutral'}
+                    </span>
+                    <span className="ml-2 text-xs text-gray-500">
+                      Impact: {issue.impact_level || 'N/A'}
+                    </span>
+                  </div>
+                  
+                  {issue.public_opinion_summary && (
+                    <div className="mt-2 bg-gray-50 p-3 rounded">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium">Public Opinion:</span> {issue.public_opinion_summary}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {issue.leader_response && (
+                    <div className="mt-2 bg-blue-50 p-3 rounded">
+                      <p className="text-sm text-blue-800">
+                        <span className="font-medium">Leader&apos;s Response:</span> {issue.leader_response}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {issue.suggested_interventions?.length > 0 && (
+                    <div className="mt-3">
+                      <h5 className="text-sm font-medium text-gray-700 mb-1">Suggested Interventions:</h5>
+                      <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                        {issue.suggested_interventions.map((action, i) => (
+                          <li key={`action-${i}`} className="ml-4">{action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Local and Hyperlocal Issues Component
+  const LocalHyperlocalIssues = ({ issues }) => {
+    if (!issues || (!issues.local_issues?.length && !issues.hyperlocal_issues?.length)) {
+      return null;
+    }
+
+    return (
+      <div className="space-y-8 mt-8">
+        {issues.local_issues?.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">Local Issues</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {issues.local_issues.map((issue, index) => (
+                <div key={`local-${index}`} className="border p-4 rounded">
+                  <h4 className="font-medium">{issue.region || 'Unspecified Region'}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{issue.issue}</p>
+                  <div className="flex justify-between items-center mt-2 text-xs">
+                    <span className={`px-2 py-1 rounded ${
+                      issue.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
+                      issue.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {issue.sentiment || 'neutral'}
+                    </span>
+                    <span className="text-gray-500">{issue.impact_level || 'N/A'}</span>
+                  </div>
+                  {issue.public_opinion_summary && (
+                    <p className="text-xs text-gray-500 mt-2">{issue.public_opinion_summary}</p>
+                  )}
+                  {issue.suggested_interventions?.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium text-gray-700">Suggested Actions:</p>
+                      <ul className="list-disc list-inside text-xs text-gray-600">
+                        {issue.suggested_interventions.map((action, i) => (
+                          <li key={`action-${i}`}>{action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {issues.hyperlocal_issues?.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-4">Hyperlocal Issues</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {issues.hyperlocal_issues.map((issue, index) => (
+                <div key={`hyperlocal-${index}`} className="border p-4 rounded">
+                  <h4 className="font-medium">{issue.location || 'Unspecified Location'}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{issue.issue}</p>
+                  <div className="flex justify-between items-center mt-2 text-xs">
+                    <span className={`px-2 py-1 rounded ${
+                      issue.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
+                      issue.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {issue.sentiment || 'neutral'}
+                    </span>
+                    <span className="text-gray-500">{issue.impact_level || 'N/A'}</span>
+                  </div>
+                  {issue.public_opinion_summary && (
+                    <p className="text-xs text-gray-500 mt-2">{issue.public_opinion_summary}</p>
+                  )}
+                  {issue.suggested_interventions?.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium text-gray-700">Suggested Actions:</p>
+                      <ul className="list-disc list-inside text-xs text-gray-600">
+                        {issue.suggested_interventions.map((action, i) => (
+                          <li key={`action-${i}`}>{action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Sentiment Analysis Section Component
   const SentimentAnalysisSection = () => {
-    if (!sentimentData || !Object.keys(sentimentData).length) return null;
+    if (!searchResults || !sentimentData || Object.keys(sentimentData).length === 0) {
+      return (
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4">Sentiment Analysis</h3>
+          <p className="text-gray-500">No sentiment data available. Please perform a search to see the analysis.</p>
+        </div>
+      );
+    }
 
+    // Safely get platform comparison data with defaults
+    const platformComparison = searchResults.platform_sentiment_comparison || {};
+    const platformNames = Object.keys(platformComparison).filter(k => k !== 'Overall');
+    
     // Prepare data for platform sentiment comparison
     const platformData = {
-      labels: Object.keys(searchResults.platform_sentiment_comparison || {}).filter(k => k !== 'Overall'),
+      labels: platformNames,
       datasets: [
         {
           label: 'Positive',
-          data: Object.entries(searchResults.platform_sentiment_comparison || {})
-            .filter(([key]) => key !== 'Overall')
-            .map(([_, platformData]) => platformData.positive || 0),
+          data: platformNames.map(platform => {
+            const data = platformComparison[platform] || {};
+            return data.positive || 0;
+          }),
           backgroundColor: 'rgba(75, 192, 192, 0.6)',
           borderColor: 'rgba(75, 192, 192, 1)',
           borderWidth: 1
         },
         {
           label: 'Neutral',
-          data: Object.entries(searchResults.platform_sentiment_comparison || {})
-            .filter(([key]) => key !== 'Overall')
-            .map(([_, platformData]) => platformData.neutral || 0),
+          data: platformNames.map(platform => {
+            const data = platformComparison[platform] || {};
+            return data.neutral || 0;
+          }),
           backgroundColor: 'rgba(201, 203, 207, 0.6)',
           borderColor: 'rgba(201, 203, 207, 1)',
           borderWidth: 1
         },
         {
           label: 'Negative',
-          data: Object.entries(searchResults.platform_sentiment_comparison || {})
-            .filter(([key]) => key !== 'Overall')
-            .map(([_, platformData]) => platformData.negative || 0),
+          data: platformNames.map(platform => {
+            const data = platformComparison[platform] || {};
+            return data.negative || 0;
+          }),
           backgroundColor: 'rgba(255, 99, 132, 0.6)',
           borderColor: 'rgba(255, 99, 132, 1)',
           borderWidth: 1
@@ -261,20 +596,30 @@ function DashboardContent() {
       ]
     };
 
+    // Safely get region-wise analysis data with defaults
+    const regionWiseData = searchResults.region_wise_analysis || {};
+    const regionNames = Object.keys(regionWiseData);
+    
     // Prepare data for regional sentiment
     const regionalData = {
-      labels: Object.keys(searchResults.region_wise_analysis || {}),
+      labels: regionNames,
       datasets: [
         {
           label: 'Positive',
-          data: Object.values(searchResults.region_wise_analysis || {}).map(r => r.positive || 0),
+          data: regionNames.map(region => {
+            const data = regionWiseData[region] || {};
+            return data.positive || 0;
+          }),
           backgroundColor: 'rgba(54, 162, 235, 0.6)',
           borderColor: 'rgba(54, 162, 235, 1)',
           borderWidth: 1
         },
         {
           label: 'Negative',
-          data: Object.values(searchResults.region_wise_analysis || {}).map(r => r.negative || 0),
+          data: regionNames.map(region => {
+            const data = regionWiseData[region] || {};
+            return data.negative || 0;
+          }),
           backgroundColor: 'rgba(255, 99, 132, 0.6)',
           borderColor: 'rgba(255, 99, 132, 1)',
           borderWidth: 1
@@ -282,19 +627,27 @@ function DashboardContent() {
       ]
     };
 
+    // Safely get demographic support data with defaults
+    const demographicSupportBase = searchResults.demographic_support_base || {};
+    const supportLabels = [
+      'Youth (18-35)', 
+      'Middle-age (36-55)', 
+      'Senior (56+)', 
+      'Urban', 
+      'Rural'
+    ];
+    
     // Prepare data for demographic support
     const demographicSupportData = {
-      labels: ['Youth (18-35)', 'Middle-age (36-55)', 'Senior (56+)', 'Urban', 'Rural'],
+      labels: supportLabels,
       datasets: [
         {
           label: 'Support %',
-          data: [
-            searchResults.demographic_support_base?.['Youth (18-35)'] || 0,
-            searchResults.demographic_support_base?.['Middle-age (36-55)'] || 0,
-            searchResults.demographic_support_base?.['Senior (56+)'] || 0,
-            searchResults.demographic_support_base?.Urban || 0,
-            searchResults.demographic_support_base?.Rural || 0
-          ],
+          data: supportLabels.map(label => {
+            // Handle different label formats (with or without space after colon)
+            const key = label.replace(':', '').trim();
+            return demographicSupportBase[key] || 0;
+          }),
           backgroundColor: [
             'rgba(255, 159, 64, 0.6)',
             'rgba(75, 192, 192, 0.6)',
@@ -314,8 +667,10 @@ function DashboardContent() {
       ]
     };
 
-    // Calculate overall support
-    const overallSupport = searchResults.demographic_support_base?.Overall || 0;
+    // Calculate overall support with fallback
+    const overallSupport = demographicSupportBase.Overall || 
+                         (demographicSupportBase.overall_support !== undefined ? 
+                          demographicSupportBase.overall_support : 0);
 
     return (
       <div className="space-y-8">
@@ -474,38 +829,95 @@ function DashboardContent() {
     });
     
     if (searchResults) {
+      console.log('Updating with search results:', searchResults);
+      
       // Update leader profile and executive summary
       if (searchResults.leader_profile) {
-        setLeaderProfile(Array.isArray(searchResults.leader_profile) ? searchResults.leader_profile : []);
+        setLeaderProfile(Array.isArray(searchResults.leader_profile) ? 
+          searchResults.leader_profile : []);
       }
       
       if (searchResults.executive_summary) {
-        setExecutiveSummary(searchResults.executive_summary || '');
+        setExecutiveSummary(Array.isArray(searchResults.executive_summary) ? 
+          searchResults.executive_summary.join('\n\n') : 
+          String(searchResults.executive_summary || ''));
       }
       
       // Update caste distribution data
       if (searchResults.caste_distribution) {
-        setCasteData(searchResults.caste_distribution);
+        const distribution = {};
+        // Ensure all values are numbers and handle potential string numbers
+        Object.entries(searchResults.caste_distribution).forEach(([key, value]) => {
+          const numValue = typeof value === 'string' ? 
+            parseFloat(value.replace('%', '')) || 0 : 
+            Number(value) || 0;
+          distribution[key] = numValue;
+        });
+        setCasteData(distribution);
         
-        // Auto-select the first caste if none selected
-        if (!selectedCaste) {
-          const firstCaste = Object.keys(searchResults.caste_distribution)[0];
+        // Auto-select the first caste if none selected or if selected caste doesn't exist
+        if (!selectedCaste || !distribution[selectedCaste]) {
+          const firstCaste = Object.keys(distribution)[0];
           if (firstCaste) setSelectedCaste(firstCaste);
         }
       }
 
-      // Update sentiment data
+      // Update sentiment data with proper defaults
       if (searchResults.sentiment_analysis) {
-        setSentimentData(searchResults.sentiment_analysis);
+        const sentiment = searchResults.sentiment_analysis;
+        // Ensure sentiment_by_caste exists and has proper structure
+        if (sentiment.sentiment_by_caste) {
+          Object.entries(sentiment.sentiment_by_caste).forEach(([caste, data]) => {
+            if (data) {
+              // Ensure all sentiment values are numbers
+              ['positive', 'negative', 'neutral'].forEach(key => {
+                if (data[key] !== undefined) {
+                  data[key] = Number(data[key]) || 0;
+                }
+              });
+            }
+          });
+        }
+        setSentimentData(sentiment);
       }
 
-      // Update insights and trends
-      setInsights(searchResults.insights || getDefaultInsights());
-      setTrends(searchResults.trends || getDefaultTrends());
+      // Update platform comparison data if available
+      if (searchResults.platform_sentiment_comparison) {
+        setPlatformComparison(searchResults.platform_sentiment_comparison);
+      }
+
+      // Update region-wise analysis if available
+      if (searchResults.region_wise_analysis) {
+        setRegionWiseAnalysis(searchResults.region_wise_analysis);
+      }
+
+      // Update demographic support if available
+      if (searchResults.demographic_support_base) {
+        setDemographicSupport(searchResults.demographic_support_base);
+      }
+
+      // Update insights and trends with proper defaults
+      setInsights({
+        key_findings: Array.isArray(searchResults.insights?.key_findings) ? 
+          searchResults.insights.key_findings : 
+          (searchResults.insights ? [searchResults.insights] : []),
+        recommendations: Array.isArray(searchResults.insights?.recommendations) ?
+          searchResults.insights.recommendations :
+          []
+      });
+
+      setTrends({
+        overall_trend: searchResults.trends?.overall_trend || '',
+        notable_changes: Array.isArray(searchResults.trends) 
+          ? searchResults.trends.slice(1) 
+          : (searchResults.trends?.notable_changes || [
+              'No notable changes recorded',
+              'Try a different search term',
+              'Check back later for updates'
+            ])
+      });
     }
   }, [searchResults, selectedCaste]);
-
-
 
   // Handle downloading the report as PDF
   const handleSaveReport = async () => {
@@ -589,161 +1001,268 @@ function DashboardContent() {
   };
 
   const handleSearch = async (e) => {
-    e.preventDefault();
+    // Store setLocalData in a local constant to ensure it's available in the catch block
+    const setLocalDataState = setLocalData;
     
-    const query = searchTerm.trim();
-    if (!query || isLoading) return;
+    if (e) e.preventDefault();
+    if (!searchTerm.trim()) return;
 
     setIsLoading(true);
     setError('');
+    setSearchResults(null);
     setSelectedCaste(null);
-    setSaveSuccess(false);
+    setCasteData(getDefaultCasteData());
+    setSentimentData(getDefaultSentimentData());
+    setInsights(getDefaultInsights());
+    setTrends(getDefaultTrends());
+    setStrengthsWeaknesses(getDefaultStrengthsWeaknesses());
+    setRegionWiseAnalysis(getDefaultRegionWiseAnalysis());
+    setPlatformComparison(getDefaultPlatformComparison());
+    setDemographicSupport(getDefaultDemographicSupport());
+    setLeaderProfile([]);
+    setExecutiveSummary('');
     setReportLink('');
+    setSaveSuccess(false);
+    setPoliticalStrategyReport(null);
+    setLocalDataState(null); // Clear local data at the start
 
     try {
-      // Reset data while loading
-      setCasteData({});
-      setSentimentData({});
-      setInsights(getDefaultInsights());
-      setTrends(getDefaultTrends());
-
-      // Prepare request body with all filter parameters
-      const requestBody = {
-        query: query,
-        analysisType: 'caste_analysis',
-        region: filters.region,
-        timeRange: filters.timeRange,
-        detailed: filters.detailed,
-        includeNews: filters.includeNews,
-        includeTrends: filters.includeTrends,
-        // Include detailed analysis parameters
-        sentimentThreshold: filters.sentimentThreshold,
-        includeSentimentBreakdown: filters.includeSentimentBreakdown,
-        includeSourceAnalysis: filters.includeSourceAnalysis
+      // Helper function to handle API calls with error handling and logging
+      const fetchWithRetry = async (url, options, retries = 1) => {
+        console.log(`Attempting to call ${url} with options:`, options);
+        try {
+          const response = await fetch(url, options);
+          console.log(`Response status for ${url}:`, response.status);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`HTTP error for ${url}: ${response.status} - ${errorText}`);
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+          }
+          
+          const data = await response.json();
+          console.log(`Successfully fetched from ${url}:`, data);
+          return data;
+          
+        } catch (error) {
+          console.error(`Error in fetchWithRetry for ${url}:`, error);
+          if (retries > 0) {
+            console.warn(`Retrying ${url}... (${retries} attempts left)`);
+            // Add a small delay before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return fetchWithRetry(url, options, retries - 1);
+          }
+          console.error(`Failed to fetch from ${url} after retries:`, error);
+          return { error: `Failed to load data: ${error.message}` };
+        }
       };
 
-      // Add custom date range if custom time range is selected
-      if (filters.timeRange === 'custom') {
-        requestBody.customStartDate = filters.customStartDate;
-        requestBody.customEndDate = filters.customEndDate;
+      // Call all four APIs in parallel with error handling
+      const [searchData, localData, leadersData, politicalStrategyData] = await Promise.all([
+        // Main search API
+        fetchWithRetry('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            query: searchTerm,
+            name: searchTerm,
+            analysisType: 'caste_analysis',
+            region: filters.region,
+            timeRange: filters.timeRange,
+            detailed: filters.detailed,
+            includeNews: filters.includeNews,
+            includeTrends: filters.includeTrends,
+            sentimentThreshold: filters.sentimentThreshold,
+            includeSentimentBreakdown: filters.includeSentimentBreakdown,
+            includeSourceAnalysis: filters.includeSourceAnalysis
+          })
+        }),
+        // Local and Hyperlocal API
+        fetchWithRetry('/api/localAndHyperlocal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            query: `Search for ${searchTerm} in local and hyperlocal context`,
+            name: searchTerm
+          })
+        }),
+        // Assembly Leaders API
+        fetchWithRetry('/api/assemblyLeaders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            query: `Search for ${searchTerm} in assembly leaders context`,
+            name: searchTerm
+          })
+        }),
+        // Political Strategy Report API
+        fetchWithRetry('/api/politicalStrategyReport', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            query: searchTerm,
+            region: filters.region,
+            timeRange: filters.timeRange,
+            customStartDate: filters.customStartDate,
+            customEndDate: filters.customEndDate
+          })
+        })
+      ]);
+
+      // Update local data state using the locally scoped setter
+      setLocalDataState(localData);
+      
+      // Check for errors in any of the API responses
+      const apiErrors = [
+        searchData?.error && 'Search API: ' + searchData.error,
+        localData?.error && 'Local API: ' + localData.error,
+        leadersData?.error && 'Leaders API: ' + leadersData.error,
+        politicalStrategyData?.error && 'Political Strategy API: ' + politicalStrategyData.error
+      ].filter(Boolean);
+
+      if (apiErrors.length > 0) {
+        console.warn('API warnings:', apiErrors);
+        // Continue processing with partial data, but show warning to user
+        setError(`Some data might be incomplete: ${apiErrors.join('; ')}`);
       }
 
-      console.log('Sending request to /api/search with filters:', requestBody);
-      
-      // Call the API endpoint with all filters
-      const response = await fetch('/api/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-      
-      console.log('Received response status:', response.status);
+      // Log processed responses for debugging
+      console.log('Search API response:', searchData);
+      console.log('Local API response:', localData);
+      console.log('Leaders API response:', leadersData);
+      console.log('Political Strategy API response:', politicalStrategyData);
 
-      if (!response.ok) {
-        console.error('Error response status:', response.status);
-        let errorData;
-        try {
-          errorData = await response.json();
-          console.error('Error response data:', errorData);
-        } catch (e) {
-          console.error('Failed to parse error response:', e);
-          throw new Error(`Server responded with status ${response.status}: ${response.statusText}`);
-        }
-        throw new Error(errorData.error || `Server error: ${response.statusText}`);
-      }
-
-      let responseData;
-      try {
-        const responseText = await response.text();
-        console.log('Raw response text:', responseText);
+      // Combine all data with proper fallbacks
+      const combinedData = {
+        // Main search data
+        ...(searchData || {}),
         
-        try {
-          responseData = JSON.parse(responseText);
-          console.log('Parsed response data:', responseData);
-        } catch (e) {
-          console.error('Failed to parse JSON response:', e);
-          throw new Error('Invalid JSON response from server');
-        }
-      } catch (e) {
-        console.error('Failed to read response:', e);
-        throw new Error('Failed to read server response');
-      }
+        // Local and hyperlocal data with proper nesting
+        local_hyperlocal_issues: localData?.local_hyperlocal_issues || {
+          local_issues: [],
+          hyperlocal_issues: []
+        },
+        
+        // Assembly leaders data with proper nesting
+        assembly_leader_report: leadersData?.data?.assembly_leader_report || leadersData?.assembly_leader_report || {
+          constituency: '',
+          mla: {
+            name: '',
+            party: '',
+            term_start: '',
+            contact: {
+              mobile: '',
+              email: '',
+              office_address: ''
+            }
+          },
+          key_issues: []
+        },
+        
+        // Political Strategy Report data - extract the nested political_strategy_report from the response
+        political_strategy_report: politicalStrategyData?.political_strategy_report || {
+          social_media_performance: {},
+          key_issues: [],
+          electoral_analysis: {},
+          policy_recommendations: []
+        },
+        // Ensure query and timestamp are always set
+        query: searchTerm,
+        timestamp: new Date().toISOString()
+      };
+      console.log('Combined data assembly_leader_report :',  combinedData.assembly_leader_report),
       
-      if (!responseData) {
-        throw new Error('Received empty response from server');
-      }
-      
-      if (responseData.success === false) {
-        console.error('Error in response:', responseData);
-        throw new Error(responseData.error || 'Request failed');
-      }
-      
-      // Extract the actual data (remove success flag if present)
-      const { success, ...data } = responseData;
-      
-      // Validate required fields with more detailed logging
-      if (!data.caste_distribution) {
-        console.error('Missing caste_distribution in response');
-      }
-      if (!data.sentiment_analysis) {
-        console.error('Missing sentiment_analysis in response');
-      }
-      
-      if (!data.caste_distribution || !data.sentiment_analysis) {
-        console.error('Incomplete response data:', JSON.stringify(data, null, 2));
-        throw new Error('Incomplete data received from server');
-      }
-      
-      // Process and validate the API response data
+      console.log('Combined data with local issues:', JSON.stringify({
+        local_issues: combinedData.local_hyperlocal_issues?.local_issues,
+        hyperlocal_issues: combinedData.local_hyperlocal_issues?.hyperlocal_issues
+      }, null, 2));
+
       // Calculate total results based on news items if available
-      const newsCount = data.news ? 
-        (data.news.positive?.length || 0) + 
-        (data.news.negative?.length || 0) + 
-        (data.news.neutral?.length || 0) : 0;
-        
+      const newsCount = combinedData.news ? 
+        ((combinedData.news.positive?.length || 0) + 
+        (combinedData.news.negative?.length || 0) + 
+        (combinedData.news.neutral?.length || 0)) : 0;
+      
+      // Prepare the complete data structure with all required fields
       const processedData = {
-        query,
-        timestamp: new Date().toISOString(),
-        totalResults: newsCount > 0 ? newsCount : 1, // Default to 1 if no news items but analysis exists
-        caste_distribution: data.caste_distribution || {},
-        sentiment_analysis: data.sentiment_analysis || {},
-        // Handle both key_insights and insights for backward compatibility
+        // Spread the combined data first
+        ...combinedData,
+        
+        // Ensure all required top-level fields exist
+        caste_distribution: combinedData.caste_distribution || {
+          general: 0,
+          obc: 0,
+          sc: 0,
+          st: 0,
+          others: 0
+        },
+        
+        sentiment_analysis: combinedData.sentiment_analysis || {
+          general: { positive: 0, neutral: 0, negative: 0 },
+          obc: { positive: 0, neutral: 0, negative: 0 },
+          sc: { positive: 0, neutral: 0, negative: 0 },
+          st: { positive: 0, neutral: 0, negative: 0 },
+          others: { positive: 0, neutral: 0, negative: 0 }
+        },
+        
+        // Structure insights properly
         insights: {
-          key_findings: data.key_insights || data.insights?.key_findings || [],
-          recommendations: data.insights?.recommendations || []
+          key_findings: combinedData.key_insights || combinedData.insights?.key_findings || [
+            'No key findings available',
+            'Please try a different search term',
+            'Check back later for updates'
+          ],
+          recommendations: combinedData.insights?.recommendations || [
+            'Try a different search term',
+            'Check your internet connection',
+            'Contact support if the issue persists'
+          ]
         },
-        // Handle trends data
+        
+        // Structure trends with fallbacks
         trends: {
-          overall_trend: data.trends?.overall_trend || data.trends?.[0] || 'No trend data available',
-          notable_changes: Array.isArray(data.trends) ? data.trends.slice(1) : (data.trends?.notable_changes || [])
+          overall_trend: combinedData.trends?.overall_trend || 'No trend data available',
+          notable_changes: Array.isArray(combinedData.trends) 
+            ? combinedData.trends.slice(1) 
+            : (combinedData.trends?.notable_changes || [
+                'No notable changes recorded',
+                'Try a different search term',
+                'Check back later for updates'
+              ])
         },
-        // Include news if available
-        news: data.news || {
-          positive: [],
-          negative: [],
-          neutral: []
+        
+        // Ensure news structure exists
+        news: {
+          positive: combinedData.news?.positive || [],
+          negative: combinedData.news?.negative || [],
+          neutral: combinedData.news?.neutral || []
         },
-        // Add new detailed analysis fields
-        key_strengths_weaknesses: data.key_strengths_weaknesses || getDefaultStrengthsWeaknesses(),
-        region_wise_analysis: data.region_wise_analysis || getDefaultRegionWiseAnalysis(),
-        platform_sentiment_comparison: data.platform_sentiment_comparison || getDefaultPlatformComparison(),
-        demographic_support_base: data.demographic_support_base || getDefaultDemographicSupport()
+        
+        // Set all other required fields with defaults
+        key_strengths_weaknesses: combinedData.key_strengths_weaknesses || getDefaultStrengthsWeaknesses(),
+        region_wise_analysis: combinedData.region_wise_analysis || getDefaultRegionWiseAnalysis(),
+        platform_sentiment_comparison: combinedData.platform_sentiment_comparison || getDefaultPlatformComparison(),
+        demographic_support_base: combinedData.demographic_support_base || getDefaultDemographicSupport(),
+        executive_summary: combinedData.executive_summary || 'No summary available. Try a different search term or check back later.',
+        leader_profile: Array.isArray(combinedData.leader_profile) ? combinedData.leader_profile : [],
+        totalResults: newsCount > 0 ? newsCount : 1
       };
 
       console.log('Processed data:', processedData);
       
       // Update all state with the processed data
       setSearchResults(processedData);
-      setCasteData(processedData.caste_distribution || {});
-      setSentimentData(processedData.sentiment_analysis || {});
-      setInsights(processedData.insights || getDefaultInsights());
-      setTrends(processedData.trends || getDefaultTrends());
-      setStrengthsWeaknesses(processedData.key_strengths_weaknesses || getDefaultStrengthsWeaknesses());
-      setRegionWiseAnalysis(processedData.region_wise_analysis || getDefaultRegionWiseAnalysis());
-      setPlatformComparison(processedData.platform_sentiment_comparison || getDefaultPlatformComparison());
-      setDemographicSupport(processedData.demographic_support_base || getDefaultDemographicSupport());
+      setCasteData(processedData.caste_distribution);
+      setSentimentData(processedData.sentiment_analysis);
+      setInsights(processedData.insights);
+      setTrends(processedData.trends);
+      setStrengthsWeaknesses(processedData.key_strengths_weaknesses);
+      setRegionWiseAnalysis(processedData.region_wise_analysis);
+      setPlatformComparison(processedData.platform_sentiment_comparison);
+      setDemographicSupport(processedData.demographic_support_base);
+      setLeaderProfile(processedData.leader_profile);
+      setExecutiveSummary(processedData.executive_summary);
+      setPoliticalStrategyReport(processedData.political_strategy_report);
       
     } catch (error) {
       console.error('Search error:', error);
@@ -1167,10 +1686,10 @@ function DashboardContent() {
               <div className="bg-white p-4 rounded-lg shadow">
                 <div className="text-gray-500 text-sm font-medium mb-1">Time Period</div>
                 <div className="text-2xl font-bold mb-2">
-                  {filters.timeRange === '24h' ? '24 Hours' :
-                   filters.timeRange === '7d' ? '7 Days' :
-                   filters.timeRange === '30d' ? '30 Days' :
-                   filters.timeRange === '90d' ? '90 Days' :
+                  {filters.timeRange === '90d' ? '90 Days' :
+                   filters.timeRange === '6m' ? '6 Months' :
+                   filters.timeRange === '1y' ? '1 Year' :
+                   filters.timeRange === '2y' ? '2 Years' :
                    filters.timeRange === 'custom' ? 'Custom Range' : 'All Time'}
                 </div>
                 {filters.timeRange === 'custom' && filters.customStartDate && filters.customEndDate && (
@@ -1183,6 +1702,8 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
+            
+            
             
             <div className="bg-white shadow rounded-lg p-6 mb-8">
               <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
@@ -1204,28 +1725,7 @@ function DashboardContent() {
                     </svg>
                     Refresh
                   </button>
-                  <button
-  onClick={handleSaveReport}
-  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center gap-2 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-  disabled={isSaving || !searchResults}
->
-  {isSaving ? (
-    <>
-      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      Generating PDF...
-    </>
-  ) : (
-    <>
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-      </svg>
-      Export PDF
-    </>
-  )}
-</button>
+                 
                 </div>
               </div>
               
@@ -1238,6 +1738,79 @@ function DashboardContent() {
                       <li key={index}>{insight}</li>
                     ))}
                   </ul>
+                </div>
+              )}
+              
+              {/* Executive Summary */}
+              {searchResults.executive_summary && (
+                <div className="bg-white p-6 rounded-lg shadow mb-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Executive Summary</h3>
+                  <div className="space-y-4 text-gray-700">
+                    {Array.isArray(searchResults.executive_summary) ? (
+                      // Handle array of paragraphs
+                      searchResults.executive_summary.map((paragraph, index) => (
+                        <p key={index} className="leading-relaxed">{paragraph}</p>
+                      ))
+                    ) : typeof searchResults.executive_summary === 'string' ? (
+                      // Handle string with newlines
+                      searchResults.executive_summary.split('\n').map((paragraph, index) => (
+                        <p key={index} className="leading-relaxed">{paragraph}</p>
+                      ))
+                    ) : (
+                      // Fallback for other formats
+                      <p className="leading-relaxed">{JSON.stringify(searchResults.executive_summary)}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Leader Profile */}
+              {searchResults.leader_profile?.length > 0 && (
+                <div className="bg-white p-6 rounded-lg shadow mb-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Leader Profile</h3>
+                  <div className="space-y-6">
+                    {searchResults.leader_profile.map((leader, index) => (
+                      <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0">
+                            <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-2xl">
+                              {leader.name?.charAt(0) || '?'}
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-lg font-semibold text-gray-900">{leader.name || 'Unnamed Leader'}</h4>
+                            <p className="text-sm text-gray-600 mb-2">{leader.position || 'Political Leader'}</p>
+                            
+                            <div className="flex items-center justify-between text-sm mb-2">
+                              <span className="text-gray-700">Influence: <span className="font-medium">{leader.influence_score || 'N/A'}/100</span></span>
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                leader.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
+                                leader.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {leader.sentiment ? 
+                                  leader.sentiment.charAt(0).toUpperCase() + leader.sentiment.slice(1) + ' Sentiment' : 
+                                  'Neutral Sentiment'}
+                              </span>
+                            </div>
+                            
+                            {leader.key_quotes?.length > 0 && (
+                              <div className="mt-3">
+                                <h5 className="text-sm font-medium text-gray-800 mb-1">Key Quotes:</h5>
+                                <ul className="space-y-2">
+                                  {leader.key_quotes.map((quote, qIndex) => (
+                                    <li key={qIndex} className="text-sm text-gray-600 pl-4 border-l-2 border-gray-200">
+                                      &ldquo;{quote}&rdquo;
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               
@@ -1352,17 +1925,7 @@ function DashboardContent() {
                 </div>
               </div>
               
-              {/* Executive Summary Section */}
-              {executiveSummary && (
-                <div className="mt-8 bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Executive Summary</h3>
-                  <div className="prose max-w-none text-gray-700">
-                    {executiveSummary.split('\n').map((paragraph, i) => (
-                      <p key={i} className="mb-4">{paragraph}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
+
               
               {/* Leader Profile Section */}
               {leaderProfile && leaderProfile.length > 0 && (
@@ -1483,6 +2046,14 @@ function DashboardContent() {
                     </div>
                   </div>
                 </div>
+              )}
+              {/* Render Assembly Leader Report if data exists */}
+            {searchResults.assembly_leader_report && (
+              <AssemblyLeaderReport report={searchResults} />
+            )}
+              {/* Political Strategy Report */}
+              {searchResults.political_strategy_report && (
+                <PoliticalStrategyReport report={searchResults} />
               )}
               
               {/* News Section */}
@@ -1865,6 +2436,21 @@ function DashboardContent() {
                       </ul>
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {/* Assembly Leader Report */}
+              {searchResults.assembly_leader_report && (
+                <div className="mt-8">
+                  <AssemblyLeaderReport report={searchResults.assembly_leader_report} />
+                </div>
+              )}
+              
+              {/* Local and Hyperlocal Issues */}
+              {searchResults.local_hyperlocal_issues && (
+                <div className="mt-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Local & Hyperlocal Issues</h2>
+                  <LocalHyperlocalIssues issues={searchResults.local_hyperlocal_issues} />
                 </div>
               )}
               
