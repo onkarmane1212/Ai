@@ -71,6 +71,7 @@ async function getReport(reportId, password = null) {
 async function generateCasteAnalysis(query, {
   detailed = false,
   region = 'all',
+  location = {},
   timeRange = '1m',
   sentimentThreshold = 0.6,
   includeSentimentBreakdown = true,
@@ -92,11 +93,25 @@ async function generateCasteAnalysis(query, {
     dateRangeText = `the last ${getTimeRangeText(timeRange)}`;
   }
   
+  // Build location context for the prompt
+  let locationContext = '';
+  if (region !== 'all' && location[region]) {
+    const locationType = {
+      'state': 'State/Union Territory',
+      'pc': 'Parliamentary Constituency',
+      'ac': 'Assembly Constituency',
+      'district': 'District',
+      'taluka': 'Taluka'
+    }[region] || 'region';
+    
+    locationContext = `, specifically in the ${locationType} of ${location[region]}`;
+  } else if (region !== 'all') {
+    locationContext = `, specifically in the selected ${region} location`;
+  }
+  
   // Build the system prompt with region and time context
   const systemPrompt = `You are an expert data analyst and crisis management specialist. 
-  Generate a comprehensive analysis of public opinion about the given topic across different caste groups in India${
-    region && region !== 'all' ? `, specifically in the ${region} region` : ''
-  }${dateRangeText ? `, covering ${dateRangeText}` : ''}.
+  Generate a comprehensive analysis of public opinion about the given topic across different caste groups in India${locationContext}${dateRangeText ? `, covering ${dateRangeText}` : ''}.
   
   IMPORTANT: Your response MUST include the following sections with COMPLETE data, and generate the news items section FIRST.
 
@@ -279,10 +294,37 @@ If the response reaches the token limit or cannot fit all sections, prioritize g
       ]
     },
     "region_wise_analysis": {
-      "North": { "positive": 60, "negative": 20, "neutral": 20 },
-      "South": { "positive": 55, "negative": 25, "neutral": 20 },
-      "East": { "positive": 58, "negative": 22, "neutral": 20 },
-      "West": { "positive": 53, "negative": 27, "neutral": 20 }
+      "state_level": {
+        "Uttar Pradesh": { "positive": 62, "negative": 18, "neutral": 20 },
+        "Maharashtra": { "positive": 58, "negative": 22, "neutral": 20 },
+        "Bihar": { "positive": 55, "negative": 25, "neutral": 20 },
+        "West Bengal": { "positive": 60, "negative": 20, "neutral": 20 },
+        "Tamil Nadu": { "positive": 57, "negative": 23, "neutral": 20 }
+      },
+      "parliamentary_constituency": {
+        "Amethi": { "positive": 65, "negative": 15, "neutral": 20 },
+        "Varanasi": { "positive": 63, "negative": 17, "neutral": 20 },
+        "Bangalore South": { "positive": 59, "negative": 21, "neutral": 20 },
+        "Mumbai South": { "positive": 61, "negative": 19, "neutral": 20 }
+      },
+      "assembly_constituency": {
+        "Varanasi South": { "positive": 64, "negative": 16, "neutral": 20 },
+        "Jadavpur": { "positive": 58, "negative": 22, "neutral": 20 },
+        "Chembur": { "positive": 60, "negative": 20, "neutral": 20 },
+        "Mylapore": { "positive": 62, "negative": 18, "neutral": 20 }
+      },
+      "district": {
+        "Lucknow": { "positive": 61, "negative": 19, "neutral": 20 },
+        "Pune": { "positive": 59, "negative": 21, "neutral": 20 },
+        "Patna": { "positive": 56, "negative": 24, "neutral": 20 },
+        "Kolkata": { "positive": 60, "negative": 20, "neutral": 20 }
+      },
+      "taluka": {
+        "Shivajinagar": { "positive": 63, "negative": 17, "neutral": 20 },
+        "Alipore": { "positive": 61, "negative": 19, "neutral": 20 },
+        "Gomtinagar": { "positive": 64, "negative": 16, "neutral": 20 },
+        "Bandra": { "positive": 62, "negative": 18, "neutral": 20 }
+      }
     },
     "platform_sentiment_comparison": {
       "Twitter/X": {
@@ -657,7 +699,8 @@ export async function POST(request) {
       query, 
       analysisType, 
       timeRange = '1m', 
-      region = 'all', 
+      region = 'all',
+      location = {},
       detailed = false,
       includeNews = true,
       includeTrends = true,
@@ -682,7 +725,8 @@ export async function POST(request) {
       try {
         result = await generateCasteAnalysis(query, { 
           detailed, 
-          region, 
+          region,
+          location,
           timeRange,
           sentimentThreshold,
           includeSentimentBreakdown,

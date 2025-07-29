@@ -163,6 +163,7 @@ function DashboardContent() {
   const [isProtected, setIsProtected] = useState(true);
   const [politicalStrategyReport, setPoliticalStrategyReport] = useState(null);
   const [localData, setLocalData] = useState(null);
+  const [castewiseDetails, setCastewiseDetails] = useState(null);
   
   const [filters, setFilters] = useState({
     timeRange: '1m',
@@ -674,6 +675,62 @@ function DashboardContent() {
 
     return (
       <div className="space-y-8">
+        {/* Castewise Details Section */}
+        {castewiseDetails?.caste_distribution && (
+          <div className="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Castewise Demographic Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Caste Distribution */}
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Caste Distribution</h3>
+                <div className="space-y-4">
+                  {castewiseDetails.caste_distribution.map((caste, index) => (
+                    <div key={index} className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50">
+                      <h4 className="font-medium">{caste.caste}</h4>
+                      <p className="text-sm text-gray-600">
+                        Population: {caste.approx_population} ({caste.percentage}%)
+                      </p>
+                      {caste.dominant_surnames?.length > 0 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Common Surnames: {caste.dominant_surnames.join(', ')}
+                        </p>
+                      )}
+                      {caste.political_influence && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Political Influence: {caste.political_influence}
+                        </p>
+                      )}
+                      {caste.key_issues?.length > 0 && (
+                        <div className="mt-1">
+                          <p className="text-xs font-medium text-gray-600">Key Issues:</p>
+                          <ul className="text-xs text-gray-500 list-disc pl-4">
+                            {caste.key_issues.map((issue, i) => (
+                              <li key={i}>{issue}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Surname to Caste Map */}
+              {castewiseDetails.surname_to_caste_map && (
+                <div>
+                  <h3 className="text-xl font-semibold mb-4">Surname to Caste Mapping</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {Object.entries(castewiseDetails.surname_to_caste_map).map(([surname, caste]) => (
+                      <div key={surname} className="bg-gray-50 p-2 rounded border text-sm">
+                        <span className="font-medium">{surname}:</span> {caste}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Platform Sentiment Comparison */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">Platform Sentiment Comparison</h3>
@@ -1025,6 +1082,7 @@ function DashboardContent() {
     setSaveSuccess(false);
     setPoliticalStrategyReport(null);
     setLocalDataState(null); // Clear local data at the start
+    setCastewiseDetails(null); // Clear castewise details
 
     try {
       // Helper function to handle API calls with error handling and logging
@@ -1057,8 +1115,8 @@ function DashboardContent() {
         }
       };
 
-      // Call all four APIs in parallel with error handling
-      const [searchData, localData, leadersData, politicalStrategyData] = await Promise.all([
+      // Call all APIs in parallel with error handling
+      const [searchData, localData, leadersData, politicalStrategyData, castewiseData] = await Promise.all([
         // Main search API
         fetchWithRetry('/api/search', {
           method: 'POST',
@@ -1106,18 +1164,31 @@ function DashboardContent() {
             customStartDate: filters.customStartDate,
             customEndDate: filters.customEndDate
           })
+        }),
+        // Castewise Details API
+        fetchWithRetry('/api/castewiseDetails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            name: searchTerm
+          })
         })
       ]);
 
       // Update local data state using the locally scoped setter
       setLocalDataState(localData);
+      setCastewiseDetails(castewiseData?.caste_distribution ? {
+        caste_distribution: castewiseData.caste_distribution,
+        surname_to_caste_map: castewiseData.surname_to_caste_map || {}
+      } : null);
       
       // Check for errors in any of the API responses
       const apiErrors = [
         searchData?.error && 'Search API: ' + searchData.error,
         localData?.error && 'Local API: ' + localData.error,
         leadersData?.error && 'Leaders API: ' + leadersData.error,
-        politicalStrategyData?.error && 'Political Strategy API: ' + politicalStrategyData.error
+        politicalStrategyData?.error && 'Political Strategy API: ' + politicalStrategyData.error,
+        castewiseData?.error && 'Castewise Details API: ' + castewiseData.error
       ].filter(Boolean);
 
       if (apiErrors.length > 0) {
@@ -1131,6 +1202,7 @@ function DashboardContent() {
       console.log('Local API response:', localData);
       console.log('Leaders API response:', leadersData);
       console.log('Political Strategy API response:', politicalStrategyData);
+      console.log('Castewise Details API response:', castewiseData);
 
       // Combine all data with proper fallbacks
       const combinedData = {
@@ -1165,6 +1237,11 @@ function DashboardContent() {
           key_issues: [],
           electoral_analysis: {},
           policy_recommendations: []
+        },
+        // Castewise Details data
+        castewise_details: castewiseData?.caste_distribution || {
+          caste_distribution: [],
+          surname_to_caste_map: {}
         },
         // Ensure query and timestamp are always set
         query: searchTerm,
@@ -1662,11 +1739,11 @@ function DashboardContent() {
                 )}
               </div>
               <div className="bg-white p-4 rounded-lg shadow">
-                <div className="text-gray-500 text-sm font-medium mb-1">News Analyzed</div>
+                <div className="text-gray-500 text-sm font-medium mb-1">Analyzed all news, displaying </div>
                 <div className="text-2xl font-bold mb-2">
                   {(searchResults.news?.positive?.length || 0) + 
                    (searchResults.news?.negative?.length || 0) + 
-                   (searchResults.news?.neutral?.length || 0)}
+                   (searchResults.news?.neutral?.length || 0)} news
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="text-center">

@@ -72,7 +72,13 @@ const getDefaultStrengthsWeaknesses = () => ({
 });
 
 // Helper function to get default region-wise analysis
-const getDefaultRegionWiseAnalysis = () => ({});
+const getDefaultRegionWiseAnalysis = () => ({
+  state_level: {},
+  parliamentary_constituency: {},
+  assembly_constituency: {},
+  district: {},
+  taluka: {}
+});
 
 // Helper function to get default platform comparison
 const getDefaultPlatformComparison = () => ({});
@@ -153,6 +159,7 @@ function DashboardContent() {
   const [trends, setTrends] = useState(getDefaultTrends());
   const [strengthsWeaknesses, setStrengthsWeaknesses] = useState(getDefaultStrengthsWeaknesses());
   const [regionWiseAnalysis, setRegionWiseAnalysis] = useState(getDefaultRegionWiseAnalysis());
+  const [activeRegionTab, setActiveRegionTab] = useState('state_level');
   const [platformComparison, setPlatformComparison] = useState(getDefaultPlatformComparison());
   const [demographicSupport, setDemographicSupport] = useState(getDefaultDemographicSupport());
   const [leaderProfile, setLeaderProfile] = useState([]);
@@ -170,6 +177,13 @@ function DashboardContent() {
     customStartDate: '',
     customEndDate: '',
     region: 'all',
+    location: {
+      state: '',
+      pc: '',
+      ac: '',
+      district: '',
+      taluka: ''
+    },
     detailed: false,
     includeNews: true,
     includeTrends: true,
@@ -180,16 +194,24 @@ function DashboardContent() {
   
   
   
-  // Available regions for filtering
+  // Location hierarchy for filtering
   const regions = [
     { value: 'all', label: 'All India' },
-    { value: 'north', label: 'North India' },
-    { value: 'south', label: 'South India' },
-    { value: 'east', label: 'East India' },
-    { value: 'west', label: 'West India' },
-    { value: 'northeast', label: 'North East' },
-    { value: 'central', label: 'Central India' }
+    { value: 'state', label: 'State / Union Territory' },
+    { value: 'pc', label: 'Parliamentary Constituency' },
+    { value: 'ac', label: 'Assembly Constituency' },
+    { value: 'district', label: 'District' },
+    { value: 'taluka', label: 'Taluka' }
   ];
+  
+  // State for selected location based on hierarchy
+  const [selectedLocation, setSelectedLocation] = useState({
+    state: '',
+    pc: '',
+    ac: '',
+    district: '',
+    taluka: ''
+  });
   const [newsPage, setNewsPage] = useState({
     positive: 1,
     negative: 1,
@@ -1083,6 +1105,12 @@ function DashboardContent() {
     setPoliticalStrategyReport(null);
     setLocalDataState(null); // Clear local data at the start
     setCastewiseDetails(null); // Clear castewise details
+    
+    // Prepare location data for the API request
+    const locationData = {};
+    if (filters.region !== 'all' && selectedLocation[filters.region]) {
+      locationData[filters.region] = selectedLocation[filters.region];
+    }
 
     try {
       // Helper function to handle API calls with error handling and logging
@@ -1126,13 +1154,16 @@ function DashboardContent() {
             name: searchTerm,
             analysisType: 'caste_analysis',
             region: filters.region,
+            location: filters.region !== 'all' ? { [filters.region]: selectedLocation[filters.region] || '' } : {},
             timeRange: filters.timeRange,
             detailed: filters.detailed,
             includeNews: filters.includeNews,
             includeTrends: filters.includeTrends,
             sentimentThreshold: filters.sentimentThreshold,
             includeSentimentBreakdown: filters.includeSentimentBreakdown,
-            includeSourceAnalysis: filters.includeSourceAnalysis
+            includeSourceAnalysis: filters.includeSourceAnalysis,
+            customStartDate: filters.timeRange === 'custom' ? filters.customStartDate : '',
+            customEndDate: filters.timeRange === 'custom' ? filters.customEndDate : ''
           })
         }),
         // Local and Hyperlocal API
@@ -1529,24 +1560,41 @@ function DashboardContent() {
                     <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1">
                       Region
                     </label>
-                    <select
-                      id="region"
-                      value={filters.region}
-                      onChange={(e) => {
-                        setFilters(prev => ({
-                          ...prev,
-                          region: e.target.value
-                        }));
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      disabled={isLoading}
-                    >
-                      {regions.map((region) => (
-                        <option key={region.value} value={region.value}>
-                          {region.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="space-y-2">
+                      <select
+                        id="region"
+                        value={filters.region}
+                        onChange={(e) => {
+                          setFilters(prev => ({
+                            ...prev,
+                            region: e.target.value
+                          }));
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        disabled={isLoading}
+                      >
+                        {regions.map((region) => (
+                          <option key={region.value} value={region.value}>
+                            {region.label}
+                          </option>
+                        ))}
+                      </select>
+                      {filters.region !== 'all' && (
+                        <input
+                          type="text"
+                          placeholder={`Enter ${regions.find(r => r.value === filters.region)?.label || 'location'}...`}
+                          value={selectedLocation[filters.region] || ''}
+                          onChange={(e) => {
+                            setSelectedLocation(prev => ({
+                              ...prev,
+                              [filters.region]: e.target.value
+                            }));
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          disabled={isLoading}
+                        />
+                      )}
+                    </div>
                   </div>
                   
                   <div>
@@ -1838,6 +1886,50 @@ function DashboardContent() {
                       <p className="leading-relaxed">{JSON.stringify(searchResults.executive_summary)}</p>
                     )}
                   </div>
+
+                  {/* Data Table */}
+                  {searchResults.region_wise_analysis[activeRegionTab] && 
+                  Object.keys(searchResults.region_wise_analysis[activeRegionTab]).length > 0 && (
+                    <div className="overflow-x-auto">
+                      <h4 className="text-md font-medium text-gray-700 mb-3">
+                        {{
+                          state_level: 'State/Union Territory Level',
+                          parliamentary_constituency: 'Parliamentary Constituency Level',
+                          assembly_constituency: 'Assembly Constituency Level',
+                          district: 'District Level',
+                          taluka: 'Taluka Level'
+                        }[activeRegionTab]} Analysis
+                      </h4>
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              {{
+                                state_level: 'State/UT',
+                                parliamentary_constituency: 'Constituency',
+                                assembly_constituency: 'AC',
+                                district: 'District',
+                                taluka: 'Taluka'
+                              }[activeRegionTab]}
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Positive</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Neutral</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Negative</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {Object.entries(searchResults.region_wise_analysis[activeRegionTab] || {}).map(([location, data]) => (
+                            <tr key={location}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{location}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">{data.positive}%</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{data.neutral}%</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">{data.negative}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
               
@@ -2351,127 +2443,155 @@ function DashboardContent() {
                         );
                       })}
                   </div>
-                </div>
-              )}
-              
               {/* Region-wise Analysis */}
               {filters.detailed && searchResults.region_wise_analysis && (
-                <div className="mt-8 bg-white p-6 rounded-lg shadow">
+                <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                   <h3 className="text-lg font-medium text-gray-900 mb-6">Regional Sentiment Analysis</h3>
                   
-                  {/* Bar Chart */}
-                  <div className="mb-8 h-80">
-                    <Bar
-                      data={{
-                        labels: Object.keys(searchResults.region_wise_analysis).map(region => `${region} Region`),
-                        datasets: [
-                          {
-                            label: 'Positive',
-                            data: Object.values(searchResults.region_wise_analysis).map(data => data.positive),
-                            backgroundColor: '#10B981',
-                            borderRadius: 4
-                          },
-                          {
-                            label: 'Neutral',
-                            data: Object.values(searchResults.region_wise_analysis).map(data => data.neutral),
-                            backgroundColor: '#F59E0B',
-                            borderRadius: 4
-                          },
-                          {
-                            label: 'Negative',
-                            data: Object.values(searchResults.region_wise_analysis).map(data => data.negative),
-                            backgroundColor: '#EF4444',
-                            borderRadius: 4
-                          }
-                        ]
-                      }}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          x: {
-                            stacked: true,
-                            grid: {
-                              display: false
-                            }
-                          },
-                          y: {
-                            stacked: true,
-                            max: 100,
-                            ticks: {
-                              callback: (value) => `${value}%`
+                  {/* Tabs for different location levels */}
+                  <div className="mb-6 border-b border-gray-200">
+                    <nav className="-mb-px flex space-x-8">
+                      {Object.entries({
+                        state_level: 'State/UT',
+                        parliamentary_constituency: 'Parliamentary',
+                        assembly_constituency: 'Assembly',
+                        district: 'District',
+                        taluka: 'Taluka'
+                      }).map(([key, label]) => (
+                        <button
+                          key={key}
+                          onClick={() => setActiveRegionTab(key)}
+                          className={`${activeRegionTab === key
+                            ? 'border-indigo-500 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
+
+                  {/* Chart */}
+                  <div className="h-96 mb-8">
+                    {searchResults.region_wise_analysis[activeRegionTab] && 
+                    Object.keys(searchResults.region_wise_analysis[activeRegionTab]).length > 0 ? (
+                      <Bar
+                        data={{
+                          labels: Object.keys(searchResults.region_wise_analysis[activeRegionTab] || {}),
+                          datasets: [
+                            {
+                              label: 'Positive',
+                              backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                              borderColor: 'rgba(16, 185, 129, 1)',
+                              borderWidth: 1,
+                              data: Object.values(searchResults.region_wise_analysis[activeRegionTab] || {}).map(data => data.positive),
                             },
-                            grid: {
-                              drawBorder: false
-                            }
-                          }
-                        },
-                        plugins: {
-                          tooltip: {
-                            callbacks: {
-                              label: (context) => {
-                                const label = context.dataset.label || '';
-                                const value = context.raw || 0;
-                                return `${label}: ${value}%`;
-                              }
-                            }
+                            {
+                              label: 'Neutral',
+                              backgroundColor: 'rgba(156, 163, 175, 0.7)',
+                              borderColor: 'rgba(156, 163, 175, 1)',
+                              borderWidth: 1,
+                              data: Object.values(searchResults.region_wise_analysis[activeRegionTab] || {}).map(data => data.neutral),
+                            },
+                            {
+                              label: 'Negative',
+                              backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                              borderColor: 'rgba(239, 68, 68, 1)',
+                              borderWidth: 1,
+                              data: Object.values(searchResults.region_wise_analysis[activeRegionTab] || {}).map(data => data.negative),
+                            },
+                          ],
+                        }}
+                        options={{
+                          indexAxis: 'y',
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          scales: {
+                            x: {
+                              beginAtZero: true,
+                              max: 100,
+                              title: {
+                                display: true,
+                                text: 'Percentage (%)',
+                              },
+                            },
+                            y: {
+                              ticks: {
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 45,
+                              },
+                            },
                           },
-                          legend: {
-                            position: 'top',
-                            align: 'end',
-                            labels: {
-                              usePointStyle: true,
-                              boxWidth: 6,
-                              padding: 20
-                            }
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Region Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {Object.entries(searchResults.region_wise_analysis).map(([region, data]) => (
-                      <div key={region} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <h4 className="font-medium text-gray-800 mb-3">{region} Region</h4>
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-green-600">Positive</span>
-                            <span className="text-sm font-medium">{data.positive}%</span>
-                          </div>
-                          <div className="w-full bg-gray-100 rounded-full h-2">
-                            <div 
-                              className="h-full rounded-full bg-green-500"
-                              style={{ width: `${data.positive}%` }}
-                            ></div>
-                          </div>
-                          
-                          <div className="flex justify-between items-center pt-2">
-                            <span className="text-sm text-yellow-500">Neutral</span>
-                            <span className="text-sm font-medium">{data.neutral}%</span>
-                          </div>
-                          <div className="w-full bg-gray-100 rounded-full h-2">
-                            <div 
-                              className="h-full rounded-full bg-yellow-500"
-                              style={{ width: `${data.neutral}%` }}
-                            ></div>
-                          </div>
-                          
-                          <div className="flex justify-between items-center pt-2">
-                            <span className="text-sm text-red-600">Negative</span>
-                            <span className="text-sm font-medium">{data.negative}%</span>
-                          </div>
-                          <div className="w-full bg-gray-100 rounded-full h-2">
-                            <div 
-                              className="h-full rounded-full bg-red-500"
-                              style={{ width: `${data.negative}%` }}
-                            ></div>
-                          </div>
-                        </div>
+                          plugins: {
+                            tooltip: {
+                              callbacks: {
+                                label: (context) => {
+                                  const label = context.dataset.label || '';
+                                  const value = context.raw || 0;
+                                  return `${label}: ${value}%`;
+                                },
+                              },
+                            },
+                            legend: {
+                              position: 'top',
+                            },
+                          },
+                        }}
+                      />
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-gray-500">
+                        No data available for this location level
                       </div>
-                    ))}
+                    )}
                   </div>
+
+                  {/* Data Table */}
+                  {searchResults.region_wise_analysis[activeRegionTab] && 
+                  Object.keys(searchResults.region_wise_analysis[activeRegionTab]).length > 0 && (
+                    <div className="overflow-x-auto mt-6">
+                      <h4 className="text-md font-medium text-gray-700 mb-3">
+                        {{
+                          state_level: 'State/Union Territory Level',
+                          parliamentary_constituency: 'Parliamentary Constituency Level',
+                          assembly_constituency: 'Assembly Constituency Level',
+                          district: 'District Level',
+                          taluka: 'Taluka Level'
+                        }[activeRegionTab]} Analysis
+                      </h4>
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              {{
+                                state_level: 'State/UT',
+                                parliamentary_constituency: 'Constituency',
+                                assembly_constituency: 'AC',
+                                district: 'District',
+                                taluka: 'Taluka'
+                              }[activeRegionTab]}
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Positive</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Neutral</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Negative</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {Object.entries(searchResults.region_wise_analysis[activeRegionTab] || {}).map(([location, data]) => (
+                            <tr key={location}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{location}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">{data.positive}%</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{data.neutral}%</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">{data.negative}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
                 </div>
               )}
               
