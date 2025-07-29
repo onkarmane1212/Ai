@@ -379,6 +379,7 @@ If the response reaches the token limit or cannot fit all sections, prioritize g
      - Do NOT skip any section.
      - Do NOT include less than required number of news items.
      - If response exceeds token limit, prioritize completing all news items first.
+     - All news items must have a date in 2025 (within the last 200 days from today's date).
 
   2. NEWS ITEM STRUCTURE (EACH ITEM MUST HAVE ALL FIELDS):
      {

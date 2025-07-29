@@ -1739,11 +1739,11 @@ function DashboardContent() {
                 )}
               </div>
               <div className="bg-white p-4 rounded-lg shadow">
-                <div className="text-gray-500 text-sm font-medium mb-1">News Analyzed</div>
+                <div className="text-gray-500 text-sm font-medium mb-1">Analyzed all news, displaying </div>
                 <div className="text-2xl font-bold mb-2">
                   {(searchResults.news?.positive?.length || 0) + 
                    (searchResults.news?.negative?.length || 0) + 
-                   (searchResults.news?.neutral?.length || 0)}
+                   (searchResults.news?.neutral?.length || 0)} news
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="text-center">
