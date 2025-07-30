@@ -1746,8 +1746,8 @@ function DashboardContent() {
               </div>
               
               {error && (
-                <div className="flex items-center justify-between bg-red-50 p-3 rounded-md mb-3">
-                  <div className="text-red-600 text-sm flex-grow">please Continue with the more details</div>
+                <div className="flex items-center justify-between bg-green-50 p-3 rounded-md mb-3">
+                  <div className="text-green-600 text-sm flex-grow">please Continue with the more details</div>
                   <button
                   type="submit"
                   disabled={isLoading || !searchTerm.trim()}
