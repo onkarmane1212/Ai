@@ -1544,13 +1544,13 @@ function DashboardContent() {
                     ref={searchInputRef}
                   />
                 </div>
-                <button
+                {/* <button
                   type="submit"
                   disabled={isLoading || !searchTerm.trim()}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   {isLoading ? 'Analyzing...' : 'Analyze'}
-                </button>
+                </button> */}
               </div>
               
               {/* Region and Time Range Selectors */}
@@ -1745,7 +1745,18 @@ function DashboardContent() {
                 </div>
               </div>
               
-              {error && <div className="text-red-600 text-sm">{error}</div>}
+              {error && (
+                <div className="flex items-center justify-between bg-red-50 p-3 rounded-md mb-3">
+                  <div className="text-red-600 text-sm flex-grow">please Continue with the more details</div>
+                  <button
+                  type="submit"
+                  disabled={isLoading || !searchTerm.trim()}
+                  className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Analyzing...' : 'Continue'}
+                </button>
+                </div>
+              )}
               
               <div className="pt-2">
                 <button
