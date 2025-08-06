@@ -171,6 +171,7 @@ function DashboardContent() {
   const [politicalStrategyReport, setPoliticalStrategyReport] = useState(null);
   const [localData, setLocalData] = useState(null);
   const [castewiseDetails, setCastewiseDetails] = useState(null);
+  const [oppositionTracking, setOppositionTracking] = useState(null);
   
   const [filters, setFilters] = useState({
     timeRange: '1m',
@@ -1144,7 +1145,7 @@ function DashboardContent() {
       };
 
       // Call all APIs in parallel with error handling
-      const [searchData, localData, leadersData, politicalStrategyData, castewiseData] = await Promise.all([
+      const [searchData, localData, leadersData, politicalStrategyData, castewiseData, oppositionTrackingData] = await Promise.all([
         // Main search API
         fetchWithRetry('/api/search', {
           method: 'POST',
@@ -1203,6 +1204,14 @@ function DashboardContent() {
           body: JSON.stringify({ 
             name: searchTerm
           })
+        }),
+        // Opposition Tracking API
+        fetchWithRetry('/api/oppositionTracking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            name: searchTerm
+          })
         })
       ]);
 
@@ -1212,6 +1221,13 @@ function DashboardContent() {
         caste_distribution: castewiseData.caste_distribution,
         surname_to_caste_map: castewiseData.surname_to_caste_map || {}
       } : null);
+      console.log('Raw opposition tracking data:', oppositionTrackingData);
+      setOppositionTracking(oppositionTrackingData || null);
+      
+      // Log the state after setting it
+      setTimeout(() => {
+        console.log('Opposition tracking state after set:', oppositionTracking);
+      }, 0);
       
       // Check for errors in any of the API responses
       const apiErrors = [
@@ -1219,7 +1235,8 @@ function DashboardContent() {
         localData?.error && 'Local API: ' + localData.error,
         leadersData?.error && 'Leaders API: ' + leadersData.error,
         politicalStrategyData?.error && 'Political Strategy API: ' + politicalStrategyData.error,
-        castewiseData?.error && 'Castewise Details API: ' + castewiseData.error
+        castewiseData?.error && 'Castewise Details API: ' + castewiseData.error,
+        oppositionTrackingData?.error && 'Opposition Tracking API: ' + oppositionTrackingData.error
       ].filter(Boolean);
 
       if (apiErrors.length > 0) {
@@ -1234,6 +1251,7 @@ function DashboardContent() {
       console.log('Leaders API response:', leadersData);
       console.log('Political Strategy API response:', politicalStrategyData);
       console.log('Castewise Details API response:', castewiseData);
+      console.log('Opposition Tracking API response:', oppositionTrackingData);
 
       // Combine all data with proper fallbacks
       const combinedData = {
@@ -1273,6 +1291,24 @@ function DashboardContent() {
         castewise_details: castewiseData?.caste_distribution || {
           caste_distribution: [],
           surname_to_caste_map: {}
+        },
+        // Opposition Tracking data
+        opposition_tracking: oppositionTrackingData || {
+          region: '',
+          timeframe_analyzed: '',
+          opposition_parties: [],
+          overall_sentiment_towards_opposition: {
+            positive: '',
+            neutral: '',
+            negative: '',
+            summary: ''
+          },
+          narrative_recommendations: {
+            content_strategy: '',
+            target_demographics: [],
+            platform_priorities: [],
+            recommended_counter_narratives: []
+          }
         },
         // Ensure query and timestamp are always set
         query: searchTerm,
@@ -1528,6 +1564,10 @@ function DashboardContent() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Debug Info */}
+        {console.log('Rendering with oppositionTracking:', oppositionTracking)}
+        
+       
         {/* Search Form */}
         <div className="max-w-5xl mx-auto mb-8">
           <form onSubmit={handleSearch} className="space-y-4">
@@ -1993,7 +2033,7 @@ function DashboardContent() {
                   </div>
                 </div>
               )}
-              
+               
               {/* Caste Distribution Chart */}
               <div className="mt-8">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Caste Distribution</h3>
@@ -2236,6 +2276,162 @@ function DashboardContent() {
                 <PoliticalStrategyReport report={searchResults} />
               )}
               
+              {/* Opposition Tracking Section */}
+        {oppositionTracking && (
+          <div className="bg-white shadow rounded-lg p-6 mt-10 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Opposition Activity Tracker</h2>
+            <div className="space-y-6">
+              <div className="border-b pb-4">
+                <h3 className="text-lg font-medium text-gray-900">Timeframe Analyzed</h3>
+                <p className="mt-1 text-sm text-gray-600">{oppositionTracking.timeframe_analyzed || 'N/A'}</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Overall Sentiment */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Overall Sentiment Towards Opposition</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-green-700">Positive</span>
+                      <span className="text-sm text-gray-700">{oppositionTracking.overall_sentiment_towards_opposition.positive || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-yellow-600">Neutral</span>
+                      <span className="text-sm text-gray-700">{oppositionTracking.overall_sentiment_towards_opposition.neutral || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-red-600">Negative</span>
+                      <span className="text-sm text-gray-700">{oppositionTracking.overall_sentiment_towards_opposition.negative || 'N/A'}</span>
+                    </div>
+                  </div>
+                  {oppositionTracking.overall_sentiment_towards_opposition.summary && (
+                    <div className="mt-3 p-3 bg-white border rounded-md">
+                      <p className="text-sm text-gray-700">{oppositionTracking.overall_sentiment_towards_opposition.summary}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Narrative Recommendations */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Recommended Strategy</h3>
+                  {oppositionTracking.narrative_recommendations.content_strategy && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-gray-700">Content Strategy</h4>
+                      <p className="text-sm text-gray-600">{oppositionTracking.narrative_recommendations.content_strategy}</p>
+                    </div>
+                  )}
+                  
+                  {oppositionTracking.narrative_recommendations.target_demographics?.length > 0 && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-gray-700">Target Demographics</h4>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {oppositionTracking.narrative_recommendations.target_demographics.map((demo, idx) => (
+                          <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {demo}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {oppositionTracking.narrative_recommendations.platform_priorities?.length > 0 && (
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-gray-700">Platform Priorities</h4>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {oppositionTracking.narrative_recommendations.platform_priorities.map((platform, idx) => (
+                          <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {platform}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Opposition Parties */}
+              {oppositionTracking.opposition_parties?.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Opposition Parties Activity</h3>
+                  <div className="space-y-4">
+                    {oppositionTracking.opposition_parties.map((party, partyIdx) => (
+                      <div key={partyIdx} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium text-gray-900">{party.name}</h4>
+                            {party.key_leaders?.length > 0 && (
+                              <p className="text-sm text-gray-600">
+                                Key Leaders: {party.key_leaders.join(', ')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {party.digital_campaigns?.length > 0 && (
+                          <div className="mt-3 space-y-3">
+                            <h5 className="text-sm font-medium text-gray-700">Recent Campaigns</h5>
+                            <div className="space-y-4">
+                              {party.digital_campaigns.map((campaign, campIdx) => (
+                                <div key={campIdx} className="bg-gray-50 p-3 rounded-md">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mb-1">
+                                        {campaign.platform}
+                                      </span>
+                                      <p className="text-sm font-medium text-gray-900">{campaign.campaign_theme}</p>
+                                      {campaign.sentiment_polarity && (
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-1 ${
+                                          campaign.sentiment_polarity === 'positive' 
+                                            ? 'bg-green-100 text-green-800' 
+                                            : campaign.sentiment_polarity === 'negative' 
+                                              ? 'bg-red-100 text-red-800' 
+                                              : 'bg-yellow-100 text-yellow-800'
+                                        }`}>
+                                          {campaign.sentiment_polarity.charAt(0).toUpperCase() + campaign.sentiment_polarity.slice(1)} Sentiment
+                                        </span>
+                                      )}
+                                    </div>
+                                    {campaign.engagement_metrics && (
+                                      <div className="text-right">
+                                        <div className="text-xs text-gray-500">Engagement</div>
+                                        <div className="text-sm font-medium text-gray-900">
+                                          {campaign.engagement_metrics.likes || 0} 👍 • {campaign.engagement_metrics.shares || 0} 🔄
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          Reach: {campaign.engagement_metrics.reach_estimate?.toLocaleString() || 'N/A'}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {campaign.observations && (
+                                    <p className="mt-2 text-sm text-gray-600">{campaign.observations}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recommended Counter Narratives */}
+              {oppositionTracking.narrative_recommendations?.recommended_counter_narratives?.length > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h3 className="text-lg font-medium text-blue-800 mb-3">Recommended Counter Narratives</h3>
+                  <ul className="list-disc list-inside space-y-2">
+                    {oppositionTracking.narrative_recommendations.recommended_counter_narratives.map((narrative, idx) => (
+                      <li key={idx} className="text-sm text-blue-700">{narrative}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
               {/* News Section */}
               {searchResults.news && (
                 <div className="mt-8 bg-white p-6 rounded-lg shadow">
@@ -2881,186 +3077,8 @@ function DashboardContent() {
                 <SentimentAnalysisSection />
               </div>
               
-              {/* Source Analysis Section */}
-              {searchResults.source_analysis && (
-                <div className="mt-8 bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Source Analysis</h3>
-                  
-                  {/* Top Sources */}
-                  <div className="mb-8">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-md font-medium text-gray-800">Top Sources by Coverage</h4>
-                      <span className="text-sm text-gray-500">Total Sources: {searchResults.source_analysis.top_sources?.length || 0}</span>
-                    </div>
-                    
-                    {searchResults.source_analysis.top_sources && searchResults.source_analysis.top_sources.length > 0 ? (
-                      <div className="space-y-4">
-                        {searchResults.source_analysis.top_sources.map((source, index) => (
-                          <div key={index} className="flex flex-wrap items-center py-3 border-b border-gray-100 last:border-0">
-                            <div className="w-full md:w-48 font-medium text-gray-900 mb-2 md:mb-0">
-                              {source.source}
-                            </div>
-                            <div className="flex-1 min-w-0 md:px-4">
-                              <div className="w-full bg-gray-100 rounded-full h-2.5">
-                                <div 
-                                  className="h-2.5 rounded-full bg-blue-600 transition-all duration-500 ease-out" 
-                                  style={{ width: `${source.coverage}%` }}
-                                  title={`${source.coverage}% coverage`}
-                                ></div>
-                              </div>
-                            </div>
-                            <div className="w-24 text-right text-sm font-medium text-gray-700 whitespace-nowrap ml-2">
-                              {source.coverage}%
-                            </div>
-                            <div className={`ml-3 px-3 py-1 text-xs rounded-full font-medium ${
-                              source.bias === 'center' ? 'bg-blue-100 text-blue-800' :
-                              source.bias === 'center-left' ? 'bg-purple-100 text-purple-800' :
-                              source.bias === 'left' ? 'bg-indigo-100 text-indigo-800' :
-                              source.bias === 'center-right' ? 'bg-amber-100 text-amber-800' :
-                              source.bias === 'right' ? 'bg-rose-100 text-rose-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {source.bias.replace(/-/g, ' ')}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="bg-gray-50 rounded-lg p-4 text-center">
-                        <p className="text-gray-500">No source data available</p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Source Reliability */}
-                  {searchResults.source_analysis.source_reliability && (
-                    <div>
-                      <h4 className="text-md font-medium text-gray-800 mb-4">Source Reliability</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {Object.entries(searchResults.source_analysis.source_reliability).map(([type, value]) => {
-                          const typeLabel = type.replace(/_/g, ' ');
-                          const typeColor = type === 'reliable' ? 'green' : 
-                                          type === 'somewhat_reliable' ? 'yellow' : 'red';
-                          
-                          return (
-                            <div key={type} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow transition-shadow">
-                              <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-medium text-gray-700 capitalize">{typeLabel}</span>
-                                <span className="text-sm font-bold text-gray-900">{value}%</span>
-                              </div>
-                              <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                                <div 
-                                  className={`h-full rounded-full bg-${typeColor}-500`}
-                                  style={{ 
-                                    width: `${value}%`,
-                                    transition: 'width 1s ease-in-out'
-                                  }}
-                                ></div>
-                              </div>
-                              <div className="mt-2 text-xs text-gray-500">
-                                {type === 'reliable' ? 'Highly credible sources' :
-                                 type === 'somewhat_reliable' ? 'Moderately credible sources' :
-                                 'Potentially biased or unreliable sources'}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      
-                      <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4">
-                        <div className="flex">
-                          <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h2a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <div className="ml-3">
-                            <p className="text-sm text-blue-700">
-                              Source reliability is calculated based on fact-checking history, editorial standards, and cross-verification with other sources.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
               
-              {/* Analysis Metadata */}
-              {filters.detailed && searchResults.analysis_metadata && (
-                <div className="mt-8 bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-medium text-gray-900 mb-6">Analysis Details</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="text-md font-medium text-gray-800 mb-4">Report Information</h4>
-                      <dl className="space-y-3">
-                        <div className="flex justify-between">
-                          <dt className="text-sm font-medium text-gray-500">Generated At</dt>
-                          <dd className="text-sm text-gray-900">
-                            {new Date(searchResults.analysis_metadata.generated_at).toLocaleString()}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt className="text-sm font-medium text-gray-500">Data Coverage</dt>
-                          <dd className="text-sm text-gray-900 capitalize">
-                            {searchResults.analysis_metadata.parameters_used.region}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt className="text-sm font-medium text-gray-500">Time Range</dt>
-                          <dd className="text-sm text-gray-900">
-                            Last {searchResults.analysis_metadata.parameters_used.time_range}
-                          </dd>
-                        </div>
-                      </dl>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-md font-medium text-gray-800 mb-4">Analysis Parameters</h4>
-                      <dl className="space-y-3">
-                        <div className="flex justify-between">
-                          <dt className="text-sm font-medium text-gray-500">Sentiment Threshold</dt>
-                          <dd className="text-sm text-gray-900">
-                            {searchResults.analysis_metadata.parameters_used.sentiment_threshold}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt className="text-sm font-medium text-gray-500">Analysis Type</dt>
-                          <dd className="text-sm text-gray-900">
-                            {searchResults.analysis_metadata.parameters_used.detailed ? 'Detailed' : 'Basic'}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt className="text-sm font-medium text-gray-500">Includes</dt>
-                          <dd className="text-sm text-gray-900">
-                            {[
-                              searchResults.analysis_metadata.parameters_used.include_sentiment_breakdown && 'Sentiment Breakdown',
-                              searchResults.analysis_metadata.parameters_used.include_source_analysis && 'Source Analysis'
-                            ].filter(Boolean).join(', ')}
-                          </dd>
-                        </div>
-                      </dl>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h2a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-sm text-blue-700">
-                          This analysis is automatically generated based on the latest available data. 
-                          The parameters used can be adjusted to refine the results.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              
             </div>
           </div>
         ) : (
