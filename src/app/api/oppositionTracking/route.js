@@ -52,7 +52,7 @@ Generate a structured JSON report for opposition sentiment and activity tracking
 }
 
 Guidelines:
-- Include data from at least 2 opposition parties specific to ${region}.
+- Include data from at least 2 opposition parties specific to ${region}..
 - Ensure observations are realistic and recent.
 - Minimum 2/3 Recent Campaigns every party.
 - Use engaging language in narrative recommendations.
