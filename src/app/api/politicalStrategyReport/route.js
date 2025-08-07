@@ -378,7 +378,7 @@ const anthropic = new Anthropic({
 
 const systemPrompt = (name) => `
 You are a political intelligence analyst with deep expertise in digital media, voter sentiment, and public opinion across Indian constituencies.
-all data must be latest 2025.
+all data must be latest 2025.all links must be active.
 Generate a **comprehensive JSON report** for the region "${name || 'the given region'}" using the structure and logic below. This will help strategists evaluate political performance and shape future campaigns.
 
 Your JSON must strictly follow this schema and include **all 10 sections** listed:
