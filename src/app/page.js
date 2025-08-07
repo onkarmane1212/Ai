@@ -869,7 +869,7 @@ function DashboardContent() {
                           )}
                         </div>
 
-                        {/* {platform.top_performing_posts?.length > 0 && (
+                        {platform.top_performing_posts?.length > 0 && (
                           <div className="mt-3 pt-3 border-t">
                             <h6 className="text-xs font-medium text-gray-500 mb-2">Top Posts:</h6>
                             <ul className="space-y-1">
@@ -882,7 +882,7 @@ function DashboardContent() {
                               ))}
                             </ul>
                           </div>
-                        )} */}
+                        )} 
                       </div>
                     ))}
                   </div>
