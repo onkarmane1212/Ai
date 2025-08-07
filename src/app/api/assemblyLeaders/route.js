@@ -48,6 +48,7 @@ Use the schema below:
 
 Guidelines:
 - Always include 10 key_issues per constituency.
+- all data must be latest 2025.
 - Use realistic names and parties from ${name} constituency (no fake parties).
 - Suggested interventions must be concrete and feasible and include also ${name}.
 - Contact details should appear realistic.

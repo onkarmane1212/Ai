@@ -225,6 +225,25 @@ function DashboardContent() {
   
   
 
+  // Helper function to render sentiment badge
+  const renderSentimentBadge = (sentiment) => {
+    const colorMap = {
+      positive: 'bg-green-100 text-green-800',
+      negative: 'bg-red-100 text-red-800',
+      neutral: 'bg-yellow-100 text-yellow-800',
+      high: 'bg-blue-100 text-blue-800',
+      medium: 'bg-purple-100 text-purple-800',
+      low: 'bg-gray-100 text-gray-800'
+    };
+    
+    const color = colorMap[sentiment?.toLowerCase()] || 'bg-gray-100 text-gray-800';
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${color}`}>
+        {sentiment || 'N/A'}
+      </span>
+    );
+  };
+
   // Political Strategy Report Component
   const PoliticalStrategyReport = ({ report }) => {
     if (!report || !report.political_strategy_report) {
@@ -239,20 +258,24 @@ function DashboardContent() {
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Political Strategy Report</h2>
         
         {/* Overview Section */}
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold mb-4">Overview</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium text-blue-800">Leader</h4>
-              <p className="text-gray-700">{psr.leader || 'N/A'}</p>
+        <div className="mb-8 bg-blue-50 p-4 rounded-lg">
+          <h3 className="text-xl font-semibold mb-4 text-blue-800">Overview</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <h4 className="font-medium text-blue-700">Leader</h4>
+              <p className="text-gray-800">{psr.leader || 'N/A'}</p>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h4 className="font-medium text-green-800">Party</h4>
-              <p className="text-gray-700">{psr.party || 'N/A'}</p>
+            <div>
+              <h4 className="font-medium text-blue-700">Party</h4>
+              <p className="text-gray-800">{psr.party || 'N/A'}</p>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <h4 className="font-medium text-purple-800">Report Date</h4>
-              <p className="text-gray-700">{psr.report_date || 'N/A'}</p>
+            <div>
+              <h4 className="font-medium text-blue-700">Region</h4>
+              <p className="text-gray-800">{psr.region || 'N/A'}</p>
+            </div>
+            <div>
+              <h4 className="font-medium text-blue-700">Report Date</h4>
+              <p className="text-gray-800">{psr.report_date || 'N/A'}</p>
             </div>
           </div>
         </div>
@@ -261,34 +284,515 @@ function DashboardContent() {
         {psr.sections?.sentiment_analysis && (
           <div className="mb-8">
             <h3 className="text-xl font-semibold mb-4">Sentiment Analysis</h3>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="mb-2">
-                <span className="font-medium">Overall Sentiment:</span>{' '}
-                <span className={`font-semibold ${
-                  psr.sections.sentiment_analysis.overall_sentiment === 'positive' ? 'text-green-600' :
-                  psr.sections.sentiment_analysis.overall_sentiment === 'negative' ? 'text-red-600' :
-                  'text-yellow-600'
-                }`}>
-                  {psr.sections.sentiment_analysis.overall_sentiment || 'N/A'}
-                </span>
-              </p>
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Overall Sentiment */}
+                <div>
+                  <h4 className="font-medium text-lg mb-3">Overall Sentiment</h4>
+                  <div className="flex items-center space-x-3">
+                    {renderSentimentBadge(psr.sections.sentiment_analysis.overall_sentiment)}
+                    <span className="text-gray-700 text-lg font-medium">
+                      {psr.sections.sentiment_analysis.overall_sentiment || 'N/A'}
+                    </span>
+                  </div>
+                  
+                  {/* Sentiment Trends */}
+                  {psr.sections.sentiment_analysis.sentiment_trends && (
+                    <div className="mt-4">
+                      <h5 className="text-sm font-medium text-gray-600 mb-2">Trends</h5>
+                      <div className="space-y-2">
+                        {psr.sections.sentiment_analysis.sentiment_trends.week_over_week && (
+                          <div className="flex justify-between text-sm">
+                            <span>Week over Week:</span>
+                            <span className={`${psr.sections.sentiment_analysis.sentiment_trends.week_over_week.positive_change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {psr.sections.sentiment_analysis.sentiment_trends.week_over_week.positive_change > 0 ? '+' : ''}
+                              {psr.sections.sentiment_analysis.sentiment_trends.week_over_week.positive_change}%
+                            </span>
+                          </div>
+                        )}
+                        {psr.sections.sentiment_analysis.sentiment_trends.month_over_month && (
+                          <div className="flex justify-between text-sm">
+                            <span>Month over Month:</span>
+                            <span className={`${psr.sections.sentiment_analysis.sentiment_trends.month_over_month.positive_change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {psr.sections.sentiment_analysis.sentiment_trends.month_over_month.positive_change > 0 ? '+' : ''}
+                              {psr.sections.sentiment_analysis.sentiment_trends.month_over_month.positive_change}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Sentiment Breakdown */}
+                {psr.sections.sentiment_analysis.sentiment_breakdown && (
+                  <div>
+                    <h4 className="font-medium text-lg mb-3">Sentiment Breakdown</h4>
+                    <div className="space-y-3">
+                      {Object.entries(psr.sections.sentiment_analysis.sentiment_breakdown).map(([key, value]) => (
+                        <div key={key} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="capitalize font-medium">{key}</span>
+                            <span className="text-gray-700">{value}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-full rounded-full ${
+                                key === 'positive' ? 'bg-green-500' :
+                                key === 'negative' ? 'bg-red-500' :
+                                'bg-yellow-500'
+                              }`}
+                              style={{ width: `${value}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Top Comments */}
+              <div className="mt-8">
+                <h4 className="font-medium text-lg mb-3">Top Comments</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Positive Comments */}
+                  <div className="bg-white p-4 rounded-lg border border-green-100">
+                    <div className="flex items-center text-green-700 mb-2">
+                      <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                      </svg>
+                      <h5 className="font-medium">Positive Feedback</h5>
+                    </div>
+                    {psr.sections.sentiment_analysis.top_positive_comments?.length > 0 ? (
+                      <ul className="space-y-3 mt-2">
+                        {psr.sections.sentiment_analysis.top_positive_comments.slice(0, 3).map((comment, i) => (
+                          <li key={i} className="text-sm text-gray-700 border-l-2 border-green-500 pl-3 py-1">
+                            <p className="italic">"{comment.text}"</p>
+                            {comment.platform && (
+                              <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
+                                <span>{comment.platform}</span>
+                                {comment.date && <span>{new Date(comment.date).toLocaleDateString()}</span>}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">No positive comments available</p>
+                    )}
+                  </div>
+
+                  {/* Negative Comments */}
+                  <div className="bg-white p-4 rounded-lg border border-red-100">
+                    <div className="flex items-center text-red-700 mb-2">
+                      <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                      </svg>
+                      <h5 className="font-medium">Areas for Improvement</h5>
+                    </div>
+                    {psr.sections.sentiment_analysis.top_negative_comments?.length > 0 ? (
+                      <ul className="space-y-3 mt-2">
+                        {psr.sections.sentiment_analysis.top_negative_comments.slice(0, 3).map((comment, i) => (
+                          <li key={i} className="text-sm text-gray-700 border-l-2 border-red-500 pl-3 py-1">
+                            <p className="italic">"{comment.text}"</p>
+                            {comment.platform && (
+                              <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
+                                <span>{comment.platform}</span>
+                                {comment.date && <span>{new Date(comment.date).toLocaleDateString()}</span>}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">No negative feedback available</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Caste Sentiment */}
+        {psr.sections?.caste_sentiment?.caste_groups?.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4">Caste-wise Sentiment Analysis</h3>
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Caste Groups Sentiment */}
+                <div>
+                  <h4 className="text-lg font-medium mb-3">Caste Group Sentiments</h4>
+                  <div className="space-y-3">
+                    {psr.sections.caste_sentiment.caste_groups.map((caste, i) => (
+                      <div key={i} className="bg-white p-3 rounded border">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{caste.caste}</span>
+                          {renderSentimentBadge(caste.sentiment)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Caste Related Issues */}
+                {psr.sections.caste_sentiment.caste_related_issues?.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-medium mb-3">Key Caste-related Issues</h4>
+                    <div className="space-y-3">
+                      {psr.sections.caste_sentiment.caste_related_issues.map((issue, i) => (
+                        <div key={i} className="bg-white p-3 rounded border border-gray-200">
+                          <div className="flex items-start">
+                            <span className="text-blue-500 mr-2">•</span>
+                            <span className="text-gray-700">{issue}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Caste-wise Voting Patterns (if available) */}
+              {psr.sections.caste_sentiment.voting_patterns && (
+                <div className="mt-6">
+                  <h4 className="text-lg font-medium mb-3">Voting Patterns</h4>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full bg-white rounded-lg overflow-hidden">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Caste</th>
+                          <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Vote Share</th>
+                          <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Trend</th>
+                          <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Key Issues</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {Object.entries(psr.sections.caste_sentiment.voting_patterns).map(([caste, data], i) => (
+                          <tr key={i} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900">{caste}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{data.vote_share}%</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center">
+                                {data.trend === 'increasing' ? (
+                                  <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4 text-red-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                )}
+                                <span className={`text-sm ${data.trend === 'increasing' ? 'text-green-600' : 'text-red-600'}`}>
+                                  {data.trend}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {data.key_issues?.slice(0, 2).map((issue, j) => (
+                                  <span key={j} className="bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded">
+                                    {issue}
+                                  </span>
+                                ))}
+                                {data.key_issues?.length > 2 && (
+                                  <span className="text-xs text-gray-500">+{data.key_issues.length - 2} more</span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Content Scanning Analysis */}
+        {psr.sections?.content_scanning_analysis && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4">Content Analysis</h3>
+            <div className="space-y-6">
+              {/* Pro Narratives */}
+              {psr.sections.content_scanning_analysis.pro_narratives?.length > 0 && (
+                <div className="bg-green-50 p-5 rounded-lg">
+                  <div className="flex items-center mb-3">
+                    <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h4 className="text-lg font-medium text-green-800">Supportive Narratives</h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {psr.sections.content_scanning_analysis.pro_narratives.map((narrative, i) => (
+                      <div key={i} className="bg-white p-4 rounded-lg border border-green-100">
+                        <p className="font-medium text-green-700 mb-2">{narrative.narrative}</p>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p><span className="font-medium">Reach:</span> {narrative.reach?.toLocaleString() || 'N/A'}</p>
+                          <p><span className="font-medium">Sentiment:</span> {renderSentimentBadge(narrative.sentiment)}</p>
+                          {narrative.key_influencers?.length > 0 && (
+                            <div>
+                              <p className="font-medium">Key Influencers:</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {narrative.key_influencers.map((influencer, j) => (
+                                  <span key={j} className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded">
+                                    {influencer}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Anti Narratives */}
+              {psr.sections.content_scanning_analysis.anti_narratives?.length > 0 && (
+                <div className="bg-red-50 p-5 rounded-lg">
+                  <div className="flex items-center mb-3">
+                    <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h4 className="text-lg font-medium text-red-800">Critical Narratives</h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {psr.sections.content_scanning_analysis.anti_narratives.map((narrative, i) => (
+                      <div key={i} className="bg-white p-4 rounded-lg border border-red-100">
+                        <p className="font-medium text-red-700 mb-2">{narrative.narrative}</p>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p><span className="font-medium">Reach:</span> {narrative.reach?.toLocaleString() || 'N/A'}</p>
+                          <p><span className="font-medium">Sentiment:</span> {renderSentimentBadge(narrative.sentiment)}</p>
+                          {narrative.key_influencers?.length > 0 && (
+                            <div>
+                              <p className="font-medium">Key Influencers:</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {narrative.key_influencers.map((influencer, j) => (
+                                  <span key={j} className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded">
+                                    {influencer}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               
-              {psr.sections.sentiment_analysis.sentiment_breakdown && (
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2">Sentiment Breakdown</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white p-3 rounded border">
-                      <p className="text-green-600 font-medium">Positive</p>
-                      <p>{psr.sections.sentiment_analysis.sentiment_breakdown.positive || '0%'}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Demographic Sentiment */}
+        {psr.sections?.demographic_sentiment && (
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4">Demographic Analysis</h3>
+            <div className="space-y-6">
+              {/* Age Groups */}
+              {psr.sections.demographic_sentiment.age_groups && (
+                <div className="bg-white p-5 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <svg className="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <h4 className="text-lg font-medium text-gray-800">Age Group Sentiment</h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Object.entries(psr.sections.demographic_sentiment.age_groups).map(([ageGroup, data], i) => (
+                      <div key={i} className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium text-gray-700">{ageGroup}</span>
+                          {renderSentimentBadge(data.sentiment)}
+                        </div>
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${
+                              data.sentiment === 'positive' ? 'bg-green-500' : 
+                              data.sentiment === 'negative' ? 'bg-red-500' : 'bg-yellow-500'
+                            }`} 
+                            style={{ width: `${data.percentage}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>{data.percentage}%</span>
+                          <span>{data.count?.toLocaleString()} responses</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Gender Distribution */}
+              {psr.sections.demographic_sentiment.gender && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white p-5 rounded-lg border border-gray-200">
+                    <div className="flex items-center mb-4">
+                      <svg className="w-5 h-5 text-pink-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <h4 className="text-lg font-medium text-gray-800">Gender Sentiment</h4>
                     </div>
-                    <div className="bg-white p-3 rounded border">
-                      <p className="text-yellow-500 font-medium">Neutral</p>
-                      <p>{psr.sections.sentiment_analysis.sentiment_breakdown.neutral || '0%'}</p>
+                    <div className="space-y-4">
+                      {Object.entries(psr.sections.demographic_sentiment.gender).map(([gender, data], i) => (
+                        <div key={i}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="font-medium capitalize">{gender}</span>
+                            <span className="text-gray-600">{data.percentage}%</span>
+                          </div>
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${
+                                data.sentiment === 'positive' ? 'bg-green-500' : 
+                                data.sentiment === 'negative' ? 'bg-red-500' : 'bg-yellow-500'
+                              }`} 
+                              style={{ width: `${data.percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="bg-white p-3 rounded border">
-                      <p className="text-red-600 font-medium">Negative</p>
-                      <p>{psr.sections.sentiment_analysis.sentiment_breakdown.negative || '0%'}</p>
+                  </div>
+
+                  {/* Income Level */}
+                  {psr.sections.demographic_sentiment.income_level && (
+                    <div className="bg-white p-5 rounded-lg border border-gray-200">
+                      <div className="flex items-center mb-4">
+                        <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h4 className="text-lg font-medium text-gray-800">Income Level Sentiment</h4>
+                      </div>
+                      <div className="space-y-3">
+                        {Object.entries(psr.sections.demographic_sentiment.income_level).map(([incomeLevel, data], i) => (
+                          <div key={i} className="flex items-center">
+                            <div className="w-24">
+                              <span className="text-sm font-medium text-gray-700">{incomeLevel}</span>
+                            </div>
+                            <div className="flex-1 mx-2">
+                              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full ${
+                                    data.sentiment === 'positive' ? 'bg-green-500' : 
+                                    data.sentiment === 'negative' ? 'bg-red-500' : 'bg-yellow-500'
+                                  }`} 
+                                  style={{ width: `${data.percentage}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            <div className="w-10 text-right">
+                              <span className="text-sm text-gray-600">{data.percentage}%</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Education Level */}
+              {psr.sections.demographic_sentiment.education_level && (
+                <div className="bg-white p-5 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 14l9-5-9-5-9 5 9 5z" />
+                      <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                    </svg>
+                    <h4 className="text-lg font-medium text-gray-800">Education Level Sentiment</h4>
+                  </div>
+                  <div className="space-y-4">
+                    {Object.entries(psr.sections.demographic_sentiment.education_level).map(([educationLevel, data], i) => (
+                      <div key={i}>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">{educationLevel}</span>
+                          <div className="flex items-center">
+                            <span className="text-sm text-gray-600 mr-2">{data.percentage}%</span>
+                            {renderSentimentBadge(data.sentiment, 'small')}
+                          </div>
+                        </div>
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${
+                              data.sentiment === 'positive' ? 'bg-green-500' : 
+                              data.sentiment === 'negative' ? 'bg-red-500' : 'bg-yellow-500'
+                            }`} 
+                            style={{ width: `${data.percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Geographic Distribution */}
+              {psr.sections.demographic_sentiment.region && (
+                <div className="bg-white p-5 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <svg className="w-5 h-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <h4 className="text-lg font-medium text-gray-800">Regional Sentiment</h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key Issues</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {Object.entries(psr.sections.demographic_sentiment.region).map(([region, data], i) => (
+                          <tr key={i} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{region}</td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {renderSentimentBadge(data.sentiment, 'small')}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-20 bg-gray-200 rounded-full h-2.5 mr-2">
+                                  <div 
+                                    className={`h-2.5 rounded-full ${
+                                      data.sentiment === 'positive' ? 'bg-green-500' : 
+                                      data.sentiment === 'negative' ? 'bg-red-500' : 'bg-yellow-500'
+                                    }`} 
+                                    style={{ width: `${data.percentage}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-sm text-gray-600">{data.percentage}%</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {data.key_issues?.slice(0, 2).map((issue, j) => (
+                                  <span key={j} className="bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded">
+                                    {issue}
+                                  </span>
+                                ))}
+                                {data.key_issues?.length > 2 && (
+                                  <span className="text-xs text-gray-500">+{data.key_issues.length - 2} more</span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
@@ -315,23 +819,120 @@ function DashboardContent() {
         {psr.sections?.social_media_performance && (
           <div className="mb-8">
             <h3 className="text-xl font-semibold mb-4">Social Media Performance</h3>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="mb-4">{psr.sections.social_media_performance.summary}</p>
+            <div className="bg-gray-50 p-6 rounded-lg">
+              {psr.sections.social_media_performance.summary && (
+                <p className="mb-6 text-gray-700">{psr.sections.social_media_performance.summary}</p>
+              )}
               
+              {/* Platform Comparison */}
               {psr.sections.social_media_performance.platform_comparison?.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2">Platform Comparison</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <h4 className="text-lg font-medium mb-4">Platform Performance</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                     {psr.sections.social_media_performance.platform_comparison.map((platform, i) => (
-                      <div key={i} className="bg-white p-3 rounded border">
-                        <p className="font-medium">{platform.platform}</p>
-                        <p className="text-sm text-gray-600">Followers: {platform.follower_count}</p>
-                        <p className="text-sm text-gray-600">Engagement: {platform.engagement_rate}</p>
+                      <div key={i} className="bg-white p-4 rounded-lg border hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-3">
+                          <h5 className="font-medium text-gray-800">{platform.platform}</h5>
+                          {renderSentimentBadge(platform.engagement_rate)}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Followers:</span>
+                            <span className="font-medium">
+                              {platform.follower_count?.toLocaleString() || 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Engagement Rate:</span>
+                            <span className="font-medium">
+                              {platform.engagement_rate || 'N/A'}
+                            </span>
+                          </div>
+                          {platform.growth_rate && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Growth:</span>
+                              <span className={`font-medium ${
+                                platform.growth_rate.startsWith('+') ? 'text-green-600' : 
+                                platform.growth_rate.startsWith('-') ? 'text-red-600' : 
+                                'text-gray-600'
+                              }`}>
+                                {platform.growth_rate}
+                              </span>
+                            </div>
+                          )}
+                          {platform.ranking_vs_others && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Ranking:</span>
+                              <span className="font-medium">{platform.ranking_vs_others}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* {platform.top_performing_posts?.length > 0 && (
+                          <div className="mt-3 pt-3 border-t">
+                            <h6 className="text-xs font-medium text-gray-500 mb-2">Top Posts:</h6>
+                            <ul className="space-y-1">
+                              {platform.top_performing_posts.slice(0, 2).map((post, j) => (
+                                <li key={j} className="text-xs text-blue-600 truncate">
+                                  <a href={post} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                    {post.length > 50 ? `${post.substring(0, 50)}...` : post}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )} */}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
+
+              {/* Pro and Anti Pages */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Pro Pages */}
+                {psr.sections.social_media_performance.pro_pages?.length > 0 && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-green-800 mb-3">Supportive Pages</h4>
+                    <div className="space-y-3">
+                      {psr.sections.social_media_performance.pro_pages.map((page, i) => (
+                        <div key={i} className="bg-white p-3 rounded border border-green-100">
+                          <div className="flex justify-between items-start">
+                            <h5 className="font-medium text-green-700">{page.name}</h5>
+                            {renderSentimentBadge('positive')}
+                          </div>
+                          <div className="mt-2 text-sm space-y-1">
+                            <p><span className="text-gray-600">Followers:</span> {page.followers?.toLocaleString() || 'N/A'}</p>
+                            <p><span className="text-gray-600">Engagement:</span> {page.engagement_rate || 'N/A'}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Anti Pages */}
+                {psr.sections.social_media_performance.anti_pages?.length > 0 && (
+                  <div className="bg-red-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-red-800 mb-3">Critical Pages</h4>
+                    <div className="space-y-3">
+                      {psr.sections.social_media_performance.anti_pages.map((page, i) => (
+                        <div key={i} className="bg-white p-3 rounded border border-red-100">
+                          <div className="flex justify-between items-start">
+                            <h5 className="font-medium text-red-700">{page.name}</h5>
+                            {renderSentimentBadge('negative')}
+                          </div>
+                          <div className="mt-2 text-sm space-y-1">
+                            <p><span className="text-gray-600">Followers:</span> {page.followers?.toLocaleString() || 'N/A'}</p>
+                            <p><span className="text-gray-600">Engagement:</span> {page.engagement_rate || 'N/A'}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -1406,7 +2007,12 @@ function DashboardContent() {
       setDemographicSupport(processedData.demographic_support_base);
       setLeaderProfile(processedData.leader_profile);
       setExecutiveSummary(processedData.executive_summary);
-      setPoliticalStrategyReport(processedData.political_strategy_report);
+      // Set political strategy report data if it exists in the response
+      if (processedData.political_strategy_report) {
+        setPoliticalStrategyReport({
+          political_strategy_report: processedData.political_strategy_report
+        });
+      }
       
     } catch (error) {
       console.error('Search error:', error);
@@ -2272,8 +2878,8 @@ function DashboardContent() {
               <AssemblyLeaderReport report={searchResults} />
             )}
               {/* Political Strategy Report */}
-              {searchResults.political_strategy_report && (
-                <PoliticalStrategyReport report={searchResults} />
+              {politicalStrategyReport && (
+                <PoliticalStrategyReport report={politicalStrategyReport} />
               )}
               
               {/* Opposition Tracking Section */}
