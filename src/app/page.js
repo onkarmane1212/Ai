@@ -2163,7 +2163,7 @@ function DashboardContent() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900">Shakktii Analysis Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Shakktii Political Analysis Dashboard</h1>
           <p className="mt-1 text-sm text-gray-500">Search and analyze data across different castes</p>
         </div>
       </header>
