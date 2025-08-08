@@ -60,14 +60,12 @@ export default function Navbar() {
     }
 
     return (
-        <nav className="bg-white shadow-sm">
+        <nav className="bg-white shadow-sm p-2">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     <div className="flex">
                         <div className="flex-shrink-0 flex items-center">
-                            <Link href="/" className="text-xl font-bold text-indigo-600">
-                                Analysis With Shakkti
-                            </Link>
+                            <img src="/ShaktiLogo.png" alt="Container Icon" className="w-20 h-20" />
                         </div>
                     </div>
                     <div className="flex items-center">
@@ -85,7 +83,7 @@ export default function Navbar() {
                             </div>
                         ) : (
                             <div className="hidden md:ml-6 md:flex md:space-x-8">
-                                <Link 
+                                <Link
                                     href="/login"
                                     className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                 >
