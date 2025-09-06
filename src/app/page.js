@@ -93,21 +93,48 @@ const handlePrint = () => {
 
 // Helper function to render sentiment badge
 const renderSentimentBadge = (sentiment) => {
-  if (sentiment === undefined || sentiment === null) return null;
+  // Handle null, undefined, or empty values
+  if (sentiment === undefined || sentiment === null) {
+    return null;
+  }
   
-  // Convert to string and handle non-string values
-  const sentimentStr = String(sentiment).toLowerCase();
+  // Convert to string and handle non-string values safely
+  let sentimentStr;
+  try {
+    sentimentStr = String(sentiment).toLowerCase().trim();
+  } catch (e) {
+    console.error('Error processing sentiment value:', sentiment, e);
+    return null;
+  }
   
+  // If we have an empty string after trimming, return null
+  if (sentimentStr === '') {
+    return null;
+  }
+  
+  // Handle numeric values (e.g., engagement rates)
+  const numericValue = parseFloat(sentimentStr);
   let color = 'bg-gray-100 text-gray-800';
-  if (sentimentStr.includes('high') || sentimentStr.includes('positive')) {
-    color = 'bg-green-100 text-green-800';
-  } else if (sentimentStr.includes('low') || sentimentStr.includes('negative')) {
-    color = 'bg-red-100 text-red-800';
+  
+  if (!isNaN(numericValue)) {
+    // For numeric values, consider high/low thresholds
+    if (numericValue > 5) {  // Adjust threshold as needed
+      color = 'bg-green-100 text-green-800';
+    } else if (numericValue < 3) {  // Adjust threshold as needed
+      color = 'bg-red-100 text-red-800';
+    }
+  } else {
+    // For string values, check for keywords
+    if (sentimentStr.includes('high') || sentimentStr.includes('positive')) {
+      color = 'bg-green-100 text-green-800';
+    } else if (sentimentStr.includes('low') || sentimentStr.includes('negative')) {
+      color = 'bg-red-100 text-red-800';
+    }
   }
   
   return (
     <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
-      {sentiment}
+      {typeof sentiment === 'number' ? sentiment.toFixed(2) : sentiment}
     </span>
   );
 };
@@ -2479,9 +2506,9 @@ return (
                                 {platform.replace('X', '//X')}
                               </div>
                               <div className="flex-1 ml-2">
-                                <div className="w-full bg-gray-100 rounded-full h-2">
+                                <div className="w-full bg-gray-100 rounded-full h-2.5">
                                   <div
-                                    className="h-full rounded-full"
+                                    className="h-2.5 rounded-full"
                                     style={{
                                       width: '100%',
                                       backgroundImage: `linear-gradient(to right, 
@@ -2672,7 +2699,7 @@ return (
                     <div>
                       <h4 className="text-md font-medium text-green-700 mb-3 flex items-center">
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
                         </svg>
                         Strengths
                       </h4>
@@ -2688,7 +2715,7 @@ return (
                     <div>
                       <h4 className="text-md font-medium text-red-700 mb-3 flex items-center">
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                         Weaknesses
                       </h4>
@@ -2960,7 +2987,10 @@ return (
                               <div className="w-full bg-gray-100 rounded-full h-2.5">
                                 <div
                                   className="h-2.5 rounded-full bg-blue-600 transition-all duration-500 ease-out"
-                                  style={{ width: `${source.coverage}%` }}
+                                  style={{
+                                    width: `${source.coverage}%`,
+                                    transition: 'width 1s ease-in-out'
+                                  }}
                                   title={`${source.coverage}% coverage`}
                                 ></div>
                               </div>
