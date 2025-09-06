@@ -93,12 +93,15 @@ const handlePrint = () => {
 
 // Helper function to render sentiment badge
 const renderSentimentBadge = (sentiment) => {
-  if (!sentiment) return null;
+  if (sentiment === undefined || sentiment === null) return null;
+  
+  // Convert to string and handle non-string values
+  const sentimentStr = String(sentiment).toLowerCase();
   
   let color = 'bg-gray-100 text-gray-800';
-  if (sentiment.toLowerCase().includes('high') || sentiment.toLowerCase().includes('positive')) {
+  if (sentimentStr.includes('high') || sentimentStr.includes('positive')) {
     color = 'bg-green-100 text-green-800';
-  } else if (sentiment.toLowerCase().includes('low') || sentiment.toLowerCase().includes('negative')) {
+  } else if (sentimentStr.includes('low') || sentimentStr.includes('negative')) {
     color = 'bg-red-100 text-red-800';
   }
   
