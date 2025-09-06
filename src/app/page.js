@@ -94,11 +94,11 @@ const handlePrint = () => {
 // Helper function to render sentiment badge
 const renderSentimentBadge = (sentiment) => {
   // Handle null, undefined, or empty values
-  if (sentiment === undefined || sentiment === null) {
+  if (sentiment == null) {
     return null;
   }
   
-  // Convert to string and handle non-string values safely
+  // Convert to string safely
   let sentimentStr;
   try {
     sentimentStr = String(sentiment).toLowerCase().trim();
@@ -124,17 +124,28 @@ const renderSentimentBadge = (sentiment) => {
       color = 'bg-red-100 text-red-800';
     }
   } else {
-    // For string values, check for keywords
-    if (sentimentStr.includes('high') || sentimentStr.includes('positive')) {
+    // For string values, check for keywords without using .includes()
+    const hasHigh = sentimentStr.indexOf('high') !== -1;
+    const hasPositive = sentimentStr.indexOf('positive') !== -1;
+    const hasLow = sentimentStr.indexOf('low') !== -1;
+    const hasNegative = sentimentStr.indexOf('negative') !== -1;
+    
+    if (hasHigh || hasPositive) {
       color = 'bg-green-100 text-green-800';
-    } else if (sentimentStr.includes('low') || sentimentStr.includes('negative')) {
+    } else if (hasLow || hasNegative) {
       color = 'bg-red-100 text-red-800';
     }
   }
   
+  // Format the display value
+  let displayValue = sentiment;
+  if (typeof sentiment === 'number') {
+    displayValue = sentiment.toFixed(2);
+  }
+  
   return (
     <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
-      {typeof sentiment === 'number' ? sentiment.toFixed(2) : sentiment}
+      {displayValue}
     </span>
   );
 };
@@ -445,7 +456,7 @@ const AssemblyLeaderReport = ({ report }) => {
     return null;
   }
 
-  return (
+  return (<>    
     <div className="mt-8 bg-white p-6 rounded-lg shadow">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Assembly Leader Report</h2>
 
@@ -508,69 +519,70 @@ const AssemblyLeaderReport = ({ report }) => {
               </div>
             </div>
           )}
-        </div>
-      </div>
-
-      {leaderReport.executive_summary && (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-3">Executive Summary</h3>
-          <p className="text-gray-700">{leaderReport.executive_summary}</p>
-        </div>
-      )}
-
-      {leaderReport.key_issues?.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Key Issues</h3>
-          <div className="space-y-6">
-            {leaderReport.key_issues.map((issue, index) => (
-              <div key={`issue-${index}`} className="border-l-4 border-blue-500 pl-4 py-2">
-                <h4 className="font-medium text-gray-900">{issue.issue}</h4>
-                <div className="flex items-center mt-1 mb-2">
-                  <span className={`px-2 py-1 text-xs rounded ${issue.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
-                      issue.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                    }`}>
-                    {issue.sentiment || 'neutral'}
-                  </span>
-                  <span className="ml-2 text-xs text-gray-500">
-                    Impact: {issue.impact_level || 'N/A'}
-                  </span>
-                </div>
-
-                {issue.public_opinion_summary && (
-                  <div className="mt-2 bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">Public Opinion:</span> {issue.public_opinion_summary}
-                    </p>
-                  </div>
-                )}
-
-                {issue.leader_response && (
-                  <div className="mt-2 bg-blue-50 p-3 rounded">
-                    <p className="text-sm text-blue-800">
-                      <span className="font-medium">Leader&apos;s Response:</span> {issue.leader_response}
-                    </p>
-                  </div>
-                )}
-
-                {issue.suggested_interventions?.length > 0 && (
-                  <div className="mt-3">
-                    <h5 className="text-sm font-medium text-gray-700 mb-1">Suggested Interventions:</h5>
-                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                      {issue.suggested_interventions.map((action, i) => (
-                        <li key={`action-${i}`} className="ml-4">{action}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         </div>
-      )}
-    </div>
-  );
-};
+
+        {leaderReport.executive_summary && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-3">Executive Summary</h3>
+              <p className="text-gray-700">{leaderReport.executive_summary}</p>
+            </div>
+          )}
+
+          {leaderReport.key_issues?.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Key Issues</h3>
+              <div className="space-y-6">
+                {leaderReport.key_issues.map((issue, index) => (
+                  <div key={`issue-${index}`} className="border-l-4 border-blue-500 pl-4 py-2">
+                    <h4 className="font-medium text-gray-900">{issue.issue}</h4>
+                    <div className="flex items-center mt-1 mb-2">
+                      <span className={`px-2 py-1 text-xs rounded ${issue.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
+                          issue.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        }`}>
+                        {issue.sentiment || 'neutral'}
+                      </span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        Impact: {issue.impact_level || 'N/A'}
+                      </span>
+                    </div>
+
+                    {issue.public_opinion_summary && (
+                      <div className="mt-2 bg-gray-50 p-3 rounded">
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">Public Opinion:</span> {issue.public_opinion_summary}
+                        </p>
+                      </div>
+                    )}
+
+                    {issue.leader_response && (
+                      <div className="mt-2 bg-blue-50 p-3 rounded">
+                        <p className="text-sm text-blue-800">
+                          <span className="font-medium">Leader&apos;s Response:</span> {issue.leader_response}
+                        </p>
+                      </div>
+                    )}
+
+                    {issue.suggested_interventions?.length > 0 && (
+                      <div className="mt-3">
+                        <h5 className="text-sm font-medium text-gray-700 mb-1">Suggested Interventions:</h5>
+                        <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                          {issue.suggested_interventions.map((action, i) => (
+                            <li key={`action-${i}`} className="ml-4">{action}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
 
 // Local and Hyperlocal Issues Component
 const LocalHyperlocalIssues = ({ issues }) => {

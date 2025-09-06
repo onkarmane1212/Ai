@@ -102,9 +102,9 @@ const SentimentAnalysis = ({ data }) => {
           {/* Trend Indicator */}
           <div className="bg-blue-50 p-4 rounded-lg mb-4">
             <div className="flex items-center">
-              {data.sentiment_trends?.includes('increased') ? (
+              {String(data.sentiment_trends || '').includes('increased') ? (
                 <FiTrendingUp className="text-green-500 text-xl mr-2" />
-              ) : data.sentiment_trends?.includes('decreased') ? (
+              ) : String(data.sentiment_trends || '').includes('decreased') ? (
                 <FiTrendingDown className="text-red-500 text-xl mr-2" />
               ) : (
                 <FiMeh className="text-yellow-500 text-xl mr-2" />
