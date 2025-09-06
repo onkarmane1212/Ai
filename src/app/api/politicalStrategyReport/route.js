@@ -108,7 +108,6 @@
 //   }
 // }
 
-
 // app/api/political-report/route.js
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
@@ -121,14 +120,7 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-<<<<<<< Updated upstream
-const systemPrompt = (name) => `
-You are a political intelligence analyst with deep expertise in digital media, voter sentiment, and public opinion across Indian constituencies.
-all data must be latest 2025.all links must be active.
-Generate a **comprehensive JSON report** for the region "${name || 'the given region'}" using the structure and logic below. This will help strategists evaluate political performance and shape future campaigns.
-=======
 const serpapi = new SerpApi.GoogleSearch(process.env.SERPAPI_KEY);
->>>>>>> Stashed changes
 
 const formatDate = (date) => date.toISOString().split('T')[0];
 
@@ -150,7 +142,7 @@ const fetchNewsFromSerpAPI = async (query) => {
         hl: 'en',
         gl: 'in',
         num: 20,
-        tbs: `cdr:1,cd_min:${startDate},cd_max:${endDate}`,
+        tbs: `cdr:1,cd_min:${startDate},cd_max:${endDate}`
       },
       (data) => {
         if (data?.news_results?.length) {
@@ -189,16 +181,56 @@ Return ONLY valid JSON (no markdown) matching this exact schema:
     "party": "",
     "report_date": "YYYY-MM-DD",
     "sections": {
-      "social_media_performance": {summary, platform_comparison[], pro_pages[], anti_pages[]},
-      "sentiment_analysis": {overall_sentiment, sentiment_breakdown, sentiment_trends, top_positive_comments[], top_negative_comments[]},
-      "content_scanning_analysis": {pro_narratives[], anti_narratives[], emerging_trends[], viral_content[]},
-      "demographic_sentiment": {gender_based, age_group, occupation},
-      "opposition_tracking": {top_opponents[], recent_opposition_campaigns[], counter_strategies[]},
-      "strategic_recommendations": {messaging[], content_suggestions[], audience_targeting[], crisis_management[]},
-      "caste_sentiment": {caste_groups[], caste_related_issues[]},
+      "social_media_performance": {
+        "summary": "",
+        "platform_comparison": [],
+        "pro_pages": [],
+        "anti_pages": []
+      },
+      "sentiment_analysis": {
+        "overall_sentiment": "",
+        "sentiment_breakdown": {},
+        "sentiment_trends": {},
+        "top_positive_comments": [],
+        "top_negative_comments": []
+      },
+      "content_scanning_analysis": {
+        "pro_narratives": [],
+        "anti_narratives": [],
+        "emerging_trends": [],
+        "viral_content": []
+      },
+      "demographic_sentiment": {
+        "gender_based": {},
+        "age_group": {},
+        "occupation": {}
+      },
+      "opposition_tracking": {
+        "top_opponents": [],
+        "recent_opposition_campaigns": [],
+        "counter_strategies": []
+      },
+      "strategic_recommendations": {
+        "messaging": [],
+        "content_suggestions": [],
+        "audience_targeting": [],
+        "crisis_management": []
+      },
+      "caste_sentiment": {
+        "caste_groups": [],
+        "caste_related_issues": []
+      },
       "key_issues": [],
-      "party_worker_sentiment": {internal_morale, participation_trend, worker_feedback[]},
-      "flagship_schemes": {overall_sentiment, swot_analysis, public_feedback}
+      "party_worker_sentiment": {
+        "internal_morale": "",
+        "participation_trend": "",
+        "worker_feedback": []
+      },
+      "flagship_schemes": {
+        "overall_sentiment": "",
+        "swot_analysis": {},
+        "public_feedback": {}
+      }
     }
   }
 }
