@@ -85,8 +85,7 @@ export default function Navbar() {
                         ) : (
                             <div className="hidden md:ml-6 md:flex md:space-x-8">
                                 <Link
-<<<<<<< Updated upstream
-=======
+
                                     href="/"
                                     className={`px-3 py-2 rounded-md text-sm font-medium flex items-center ${pathname === '/' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
                                 >
@@ -99,7 +98,7 @@ export default function Navbar() {
                                     <FiUser className="mr-1" /> Dashboard
                                 </Link>
                                 <Link
->>>>>>> Stashed changes
+
                                     href="/login"
                                     className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                 >
