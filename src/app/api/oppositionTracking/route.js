@@ -158,14 +158,14 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const systemPrompt = (region) => `
+const systemPrompt = (name,region,timeRange) => `
 You are a political strategist specializing in digital campaigns, public sentiment analysis, and opposition tracking in Indian constituencies.
 
 Generate a structured JSON report for opposition sentiment and activity tracking in "${region}" with the following schema:
 
 {
-  "region": "[Constituency or ${region}]",
-  "timeframe_analyzed": "[e.g., Last 90 Days, June 2025, etc.]",
+  "region": "${region}",
+  "timeframe_analyzed": "${timeRange}",
   "opposition_parties": [
     {
       "name": "[Opposition Party Name]",
@@ -201,6 +201,7 @@ Generate a structured JSON report for opposition sentiment and activity tracking
 }
 
 Guidelines:
+- I want data for the opposition party of that ${name}.
 - Include data from at least 3 opposition parties specific to ${region}.
 - When mentioning a leader, first verify which party the leader is currently affiliated with (as party-switching is common), and then include both the leader's name and current party name.
 - Ensure observations are realistic and recent.
@@ -221,13 +222,12 @@ export async function POST(req) {
       );
     }
 
-    const { query, name } = requestBody;
+    const { query, name ,region,timeRange} = requestBody;
 
     if (!query && !name) {
       return NextResponse.json({ error: 'Either query or name must be provided' }, { status: 400 });
     }
 
-    const region = `${name} region`;
     const userPrompt = `
 Generate a digital opposition sentiment and activity tracking report for the region: ${region}.
 Focus on opposition leaders’ recent online campaigns, sentiment polarity, and strategy recommendations.
@@ -247,7 +247,7 @@ Return ONLY the JSON output as per schema.
             content: [
               {
                 type: 'text',
-                text: `${systemPrompt(name)}\n\n${userPrompt}`
+                text: `${systemPrompt(name,region,timeRange)}\n\n${userPrompt}`
               }
             ]
           }

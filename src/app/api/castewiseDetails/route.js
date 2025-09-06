@@ -1,12 +1,14 @@
+
+
 // app/api/castewise-details/route.js
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 const systemPrompt = (name) => `
@@ -55,7 +57,6 @@ export async function POST(req) {
     }
 
     const { query, name } = requestBody;
-
     if (!query && !name) {
       return NextResponse.json({ error: 'Either query or name must be provided' }, { status: 400 });
     }
@@ -69,28 +70,32 @@ ${query ? `Additional context: ${query}` : ''}
 
     let completion;
     try {
-      completion = await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
-        messages: [
-          { role: "system", content: systemPrompt(name) },
-          { role: "user", content: userPrompt },
-        ],
+      completion = await anthropic.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2000,
         temperature: 0.7,
-        max_tokens: 2000
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `${systemPrompt(name)}\n\n${userPrompt}`
+              }
+            ]
+          }
+        ]
       });
-    } catch (openaiError) {
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Error calling OpenAI API', details: openaiError.message },
+        { error: 'Error calling Claude API', details: error.message },
         { status: 502 }
       );
     }
 
-    const rawContent = completion.choices?.[0]?.message?.content;
+    const rawContent = completion?.content?.[0]?.text;
     if (!rawContent) {
-      return NextResponse.json(
-        { error: 'Empty response from OpenAI API' },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: 'Empty response from Claude API' }, { status: 502 });
     }
 
     let parsed;
@@ -115,7 +120,7 @@ ${query ? `Additional context: ${query}` : ''}
     } catch (parseError) {
       return NextResponse.json(
         {
-          error: 'Failed to parse response from OpenAI',
+          error: 'Failed to parse response from Claude',
           details: parseError.message,
           rawContent: rawContent.substring(0, 500) + (rawContent.length > 500 ? '...' : '')
         },
@@ -126,4 +131,3 @@ ${query ? `Additional context: ${query}` : ''}
     return NextResponse.json({ error: 'Something went wrong', details: err.message }, { status: 500 });
   }
 }
-
