@@ -100,15 +100,35 @@ const regionOptions = [
 
 // Tab configurations
 const tabs = [
-  { id: 'overview', name: 'Overview', icon: <FiHome className="mr-2" /> },
-  { id: 'caste', name: 'Caste Analysis', icon: <FiUsers className="mr-2" /> },
-  { id: 'sentiment', name: 'Sentiment', icon: <FiMessageSquare className="mr-2" /> },
-  { id: 'local', name: 'Local/Hyperlocal', icon: <FiMapPin className="mr-2" /> },
-  { id: 'region', name: 'Region', icon: <FiMap className="mr-2" /> },
+  // { id: 'strategy', name: 'Strategy', icon: <FiTrendingUp className="mr-2" /> },
+  // { id: 'overview', name: 'Overview', icon: <FiHome className="mr-2" /> },
   { id: 'profile', name: 'Profile/Summary', icon: <FiUser className="mr-2" /> },
-  { id: 'strategy', name: 'Strategy', icon: <FiTarget className="mr-2" /> },
-  { id: 'news', name: 'News', icon: <FiAward className="mr-2" /> }
+  { id: 'sentiment', name: 'Sentiment', icon: <FiMessageSquare className="mr-2" /> },
+  { id: 'caste', name: 'Caste', icon: <FiUsers className="mr-2" /> },
+  {id:'local',name:'Local/Hyperlocal',icon:<FiMapPin className="mr-2" />},
+  { id: 'caste-subcaste', name: 'Caste/Subcaste', icon: <FiActivity className="mr-2" /> },
+  { id: 'region', name: 'Region', icon: <FiMap className="mr-2" /> },
+  { id: 'platform', name: 'Platform', icon: <FiLayers className="mr-2" /> },
+  { id: 'news', name: 'News', icon: <FiAward className="mr-2" /> },
+  { id: 'leaders', name: 'Leaders', icon: <FiUser className="mr-2" /> },
+  { id: 'opposition', name: 'Opposition', icon: <FiTarget className="mr-2" /> },
 ];
+
+const AnalysisSources = () => (
+  <div className="mt-6 bg-white rounded-lg shadow p-4">
+    <p className="text-sm text-gray-600 text-center mb-3">
+      Analysed from inputs received from all media and social media
+    </p>
+    <div className="flex flex-wrap justify-center items-center gap-6">
+      <img src="/google.svg" alt="Google" className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity" />
+      <img src="/facebook.svg" alt="Facebook" className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity" />
+      <img src="/youtube.svg" alt="YouTube" className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity" />
+      <img src="/instagram.svg" alt="Instagram" className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity" />
+      <img src="/sharechat.svg" alt="ShareChat" className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity" />
+      <img src="/x-twitter.svg" alt="X (Twitter)" className="h-8 w-auto opacity-70 hover:opacity-100 transition-opacity" />
+    </div>
+  </div>
+);
 
 const Dashboard = () => {
   const router = useRouter();
@@ -769,7 +789,7 @@ const Dashboard = () => {
 
   // Tabs configuration
   const tabs = [
-    { id: 'strategy', name: 'Strategy', icon: <FiTrendingUp className="mr-2" /> },
+    // { id: 'strategy', name: 'Strategy', icon: <FiTrendingUp className="mr-2" /> },
     // { id: 'overview', name: 'Overview', icon: <FiHome className="mr-2" /> },
     { id: 'profile', name: 'Profile/Summary', icon: <FiUser className="mr-2" /> },
     { id: 'sentiment', name: 'Sentiment', icon: <FiMessageSquare className="mr-2" /> },
@@ -1373,36 +1393,10 @@ const Dashboard = () => {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <>
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <MetricCard 
-                title="Approval Rating" 
-                value={`${leaderProfile.approval_rating || 'N/A'}%`} 
-                icon={<FiTrendingUp className="h-6 w-6" />} 
-                color="green"
-              />
-              <MetricCard 
-                title="Sentiment Score" 
-                value={`${sentimentData?.overall_sentiment?.score || 'N/A'}/10`} 
-                icon={<FiMessageSquare className="h-6 w-6" />} 
-                color="blue"
-              />
-              <MetricCard 
-                title="News Coverage" 
-                value={`${newsData.length} articles`} 
-                icon={<FiAward className="h-6 w-6" />} 
-                color="purple"
-              />
-              <MetricCard 
-                title="Key Issues" 
-                value={politicalStrategy.length} 
-                icon={<FiTarget className="h-6 w-6" />} 
-                color="red"
-              />
-            </div>
+            
 
             {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
               {/* Left Column */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Executive Summary */}
@@ -1436,108 +1430,10 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Sentiment Analysis */}
-                <div className="bg-white rounded-xl shadow p-6">
-                  <SectionHeader 
-                    title="Sentiment Analysis" 
-                    description="Public sentiment across platforms" 
-                  />
-                  <div className="h-64">
-                    <Doughnut 
-                      data={sentimentChartData} 
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { 
-                          legend: { 
-                            position: 'bottom',
-                            labels: {
-                              padding: 20,
-                              usePointStyle: true,
-                              pointStyle: 'circle'
-                            }
-                          } 
-                        },
-                        cutout: '70%'
-                      }}
-                    />
-                  </div>
-                </div>
+                
               </div>
 
-              {/* Right Column */}
-              <div className="space-y-6">
-                {/* Caste Distribution */}
-                <div className="bg-white rounded-xl shadow p-6">
-                  <SectionHeader 
-                    title="Caste Distribution" 
-                    description="Support across different castes" 
-                  />
-                  <div className="h-64">
-                    {casteChartData ? (
-                      <Pie 
-                        data={casteChartData} 
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: { 
-                            legend: { 
-                              position: 'bottom',
-                              labels: {
-                                padding: 20,
-                                usePointStyle: true,
-                                pointStyle: 'circle'
-                              }
-                            } 
-                          },
-                          cutout: '60%'
-                        }}
-                      />
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-gray-500">
-                        No caste data available
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Platform Sentiment */}
-                <div className="bg-white rounded-xl shadow p-6">
-                  <SectionHeader 
-                    title="Platform Sentiment" 
-                    description="Sentiment by social platform" 
-                  />
-                  <div className="h-64">
-                    {platformChartData ? (
-                      <Bar 
-                        data={platformChartData} 
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          scales: {
-                            x: { stacked: true },
-                            y: { stacked: true, max: 100 }
-                          },
-                          plugins: { 
-                            legend: { 
-                              position: 'bottom',
-                              labels: {
-                                padding: 20,
-                                usePointStyle: true,
-                                pointStyle: 'circle'
-                              }
-                            } 
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-gray-500">
-                        No platform data available
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+             
             </div>
           </>
         )}
@@ -2503,6 +2399,7 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+      <AnalysisSources />
     </div>
   );
 };

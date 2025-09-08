@@ -277,166 +277,142 @@ function DashboardContent() {
 
   // Political Strategy Report Component
   const PoliticalStrategyReport = ({ report }) => {
-    if (!report || !report.political_strategy_report) {
-      console.log('No political strategy report data found');
-      return null;
-    }
-
+    if (!report?.political_strategy_report) return null;
     const { political_strategy_report: psr } = report;
-
-    return (
-      <>
-        <div className="mt-8 bg-white p-6 rounded-lg shadow">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Political Strategy Report</h2>
-
-          {/* Overview Section */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4">Overview</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-800">Leader</h4>
-                <p className="text-gray-700">{psr.leader || 'N/A'}</p>
+  
+    // Helper to safely render any data type
+    const renderData = (data, depth = 0) => {
+      // Handle null, undefined, or falsy values
+      if (data === null || data === undefined || data === '') {
+        return <span className="text-gray-400">N/A</span>;
+      }
+      
+      // Handle primitive types (string, number, boolean) - WRAP IN JSX
+      if (typeof data !== 'object') {
+        return <span>{String(data)}</span>;
+      }
+    
+      // Handle arrays
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          return <span className="text-gray-400">No data available</span>;
+        }
+        return (
+          <ul className={`space-y-1 ${depth > 0 ? 'pl-4' : ''}`}>
+            {data.map((item, i) => (
+              <li key={i} className="border-b pb-1">
+                {renderData(item, depth + 1)}
+              </li>
+            ))}
+          </ul>
+        );
+      }
+    
+      // At this point, data MUST be an object (not array, not primitive)
+      const entries = Object.entries(data);
+      
+      // Handle empty objects
+      if (entries.length === 0) {
+        return <span className="text-gray-400">No data available</span>;
+      }
+    
+      // Handle top-level political_strategy_report
+      if (data.political_strategy_report) {
+        const report = data.political_strategy_report;
+        return (
+          <div className="space-y-6">
+            {/* Report Header */}
+            <div className="bg-blue-50 p-4 rounded-lg border">
+              <h2 className="text-xl font-bold text-blue-800 mb-2">Political Strategy Report</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div><strong>Region:</strong> <span>{report.region || 'N/A'}</span></div>
+                <div><strong>Leader:</strong> <span>{report.leader || 'N/A'}</span></div>
+                <div><strong>Party:</strong> <span>{report.party || 'N/A'}</span></div>
+                <div><strong>Date:</strong> <span>{report.report_date || 'N/A'}</span></div>
               </div>
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-medium text-green-800">Party</h4>
-                <p className="text-gray-700">{psr.party || 'N/A'}</p>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <h4 className="font-medium text-purple-800">Report Date</h4>
-                <p className="text-gray-700">{psr.report_date || 'N/A'}</p>
-              </div>
+            </div>
+            
+            {/* Sections */}
+            <div>
+              {report.sections ? renderData(report.sections, depth + 1) : <span className="text-gray-400">No sections available</span>}
             </div>
           </div>
-
-          {/* Sentiment Analysis */}
-          {psr.sections?.sentiment_analysis && (
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold mb-4">Sentiment Analysis</h3>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="mb-2">
-                  <span className="font-medium">Overall Sentiment:</span>{' '}
-                  <span className={`font-semibold ${
-                    psr.sections.sentiment_analysis.overall_sentiment === 'positive' ? 'text-green-600' :
-                    psr.sections.sentiment_analysis.overall_sentiment === 'negative' ? 'text-red-600' :
-                    'text-yellow-600'
-                  }`}>
-                    {psr.sections.sentiment_analysis.overall_sentiment || 'N/A'}
-                  </span>
-                </p>
-
-                {psr.sections.sentiment_analysis.sentiment_breakdown && (
-                  <div className="mt-4">
-                    <h4 className="font-medium mb-2">Sentiment Breakdown</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-white p-3 rounded border">
-                        <p className="text-green-600 font-medium">Positive</p>
-                        <p>{psr.sections.sentiment_analysis.sentiment_breakdown.positive || '0%'}</p>
-                      </div>
-                      <div className="bg-white p-3 rounded border">
-                        <p className="text-yellow-500 font-medium">Neutral</p>
-                        <p>{psr.sections.sentiment_analysis.sentiment_breakdown.neutral || '0%'}</p>
-                      </div>
-                      <div className="bg-white p-3 rounded border">
-                        <p className="text-red-600 font-medium">Negative</p>
-                        <p>{psr.sections.sentiment_analysis.sentiment_breakdown.negative || '0%'}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+        );
+      }
+    
+      // Handle sections object (checks for common section names)
+      if (data.social_media_performance || data.sentiment_analysis || data.content_scanning_analysis ||
+          data.demographic_sentiment || data.opposition_tracking || data.strategic_recommendations ||
+          data.caste_sentiment || data.key_issues || data.party_worker_sentiment || data.flagship_schemes) {
+        return (
+          <div className="space-y-6">
+            {entries.map(([sectionKey, sectionValue]) => (
+              <div key={sectionKey} className="bg-white border rounded-lg p-4 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 capitalize border-b pb-2">
+                  {sectionKey.replace(/_/g, ' ')}
+                </h3>
+                <div>
+                  {renderData(sectionValue, depth + 1)}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+    
+      // UNIVERSAL FALLBACK - handles ANY object structure
+      // This ensures no object can ever be rendered directly as a React child
+      return (
+        <div className={`space-y-2 ${depth > 0 ? 'pl-4 border-l-2 border-gray-200' : ''}`}>
+          {entries.map(([key, value]) => (
+            <div key={key} className="border-b pb-2 last:border-b-0">
+              <div className="font-medium capitalize text-blue-700">
+                {key.replace(/_/g, ' ')}
+              </div>
+              <div className="text-gray-700 mt-1">
+                {/* CRITICAL: Always wrap recursive call in div to ensure JSX */}
+                <div>{renderData(value, depth + 1)}</div>
               </div>
             </div>
-          )}
-
-          {/* Key Issues */}
-          {psr.sections?.key_issues?.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold mb-4">Key Issues</h3>
-              <div className="space-y-4">
-                {psr.sections.key_issues.map((issue, index) => (
-                  <div key={index} className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50">
-                    <h4 className="font-medium">{issue.issue}</h4>
-                    <p className="text-sm text-gray-600">{issue.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Social Media Performance */}
-          {psr.sections?.social_media_performance && (
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold mb-4">Social Media Performance</h3>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="mb-4">{psr.sections.social_media_performance.summary}</p>
-
-                {psr.sections.social_media_performance.platform_comparison?.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="font-medium mb-2">Platform Comparison</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {psr.sections.social_media_performance.platform_comparison.map((platform, i) => (
-                        <div key={i} className="bg-white p-4 rounded-lg border hover:shadow-md transition-shadow">
-                          <div className="flex items-center justify-between mb-3">
-                            <h5 className="font-medium text-gray-800">{platform.platform}</h5>
-                            {renderSentimentBadge(platform.engagement_rate)}
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Followers:</span>
-                              <span className="font-medium">
-                                {platform.follower_count?.toLocaleString() || 'N/A'}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Engagement Rate:</span>
-                              <span className="font-medium">
-                                {platform.engagement_rate || 'N/A'}
-                              </span>
-                            </div>
-                            {platform.growth_rate && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Growth:</span>
-                                <span className={`font-medium ${
-                                  platform.growth_rate.startsWith('+') ? 'text-green-600' :
-                                  platform.growth_rate.startsWith('-') ? 'text-red-600' :
-                                  'text-gray-600'
-                                }`}>
-                                  {platform.growth_rate}
-                                </span>
-                              </div>
-                            )}
-                            {platform.ranking_vs_others && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Ranking:</span>
-                                <span className="font-medium">{platform.ranking_vs_others}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {platform.top_performing_posts?.length > 0 && (
-                            <div className="mt-3 pt-3 border-t">
-                              <h6 className="text-xs font-medium text-gray-500 mb-2">Top Posts:</h6>
-                              <ul className="space-y-1">
-                                {platform.top_performing_posts.slice(0, 2).map((post, j) => (
-                                  <li key={j} className="text-xs text-blue-600 truncate">
-                                    <a href={post} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                                      {post.length > 50 ? `${post.substring(0, 50)}...` : post}
-                                    </a>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          ))}
         </div>
-      </>
+      );
+    };
+  
+    return (
+      <div className="mt-8 bg-white p-6 rounded-lg shadow">
+        <h2 className="text-2xl font-bold mb-6">Political Strategy Report</h2>
+        
+        {/* Overview Section */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Overview</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { label: 'Leader', value: psr.leader },
+              { label: 'Party', value: psr.party },
+              { label: 'Report Date', value: psr.report_date }
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-gray-50 p-4 rounded">
+                <h4 className="font-medium">{label}</h4>
+                <p>{value || 'N/A'}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+  
+        {/* Dynamic Sections */}
+        {/* Dynamic Sections */}
+{psr.sections && Object.entries(psr.sections).map(([section, data]) => (
+  <div key={section} className="mb-6">
+    <h3 className="text-xl font-semibold mb-3 capitalize">
+      {section.replace(/_/g, ' ')}
+    </h3>
+    <div className="bg-gray-50 p-4 rounded">
+      {renderData(data)}
+    </div>
+  </div>
+))}
+      </div>
     );
   };
 
@@ -518,9 +494,11 @@ const AssemblyLeaderReport = ({ report }) => {
                 )}
               </div>
             </div>
-          )}
-          </div>
+           )} 
+           </div>
+              
         </div>
+        
 
         {leaderReport.executive_summary && (
             <div className="mb-8">
@@ -1459,6 +1437,7 @@ const handleSearch = async (e) => {
     console.log('Processed data:', processedData);
 
     // Update all state with the processed data
+    console.log('Political Strategy Report Data:', processedData.political_strategy_report);
     setSearchResults(processedData);
     setCasteData(processedData.caste_distribution);
     setSentimentData(processedData.sentiment_analysis);
@@ -2327,11 +2306,11 @@ return (
               )}
               {/* Render Assembly Leader Report if data exists */}
               {searchResults.assembly_leader_report && (
-                <AssemblyLeaderReport report={searchResults} />
+                <AssemblyLeaderReport report={searchResults.assembly_leader_report} />
               )}
               {/* Political Strategy Report */}
               {searchResults.political_strategy_report && (
-                <PoliticalStrategyReport report={searchResults} />
+                <PoliticalStrategyReport report={searchResults.political_strategy_report} />
               )}
 
               {/* News Section */}

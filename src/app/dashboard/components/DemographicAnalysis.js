@@ -1,6 +1,7 @@
 'use client';
 
 const DemographicAnalysis = ({ data = {} }) => {
+  console.log("DemographicAnalysis", data);
   // Safely extract data with defaults
   const genderData = data?.gender_based || {};
   const ageGroupData = data?.age_group || {};
