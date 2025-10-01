@@ -8,7 +8,7 @@ export async function GET() {
 
     const items = await Interaction.find({})
       .sort({ createdAt: -1 })
-    //   .limit(20)
+      .limit(20)
       .select('question responses createdAt')
       .lean();
 
