@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import Interaction from '../../../models/Interaction';
-
+export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await dbConnect();
@@ -18,3 +18,4 @@ export async function GET() {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
+

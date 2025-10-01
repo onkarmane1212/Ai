@@ -9,22 +9,22 @@ export default function HistoryPage() {
   const [error, setError] = useState('');
   
 
-  const fetchHistory = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/recent', { cache: 'no-store' }); // 👈 important
-      if (!res.ok) throw new Error('Failed to fetch history');
-      const data = await res.json();
-      setItems(data.items || []);
-    } catch (err) {
-      setError('Could not load history.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
   useEffect(() => {
-    
+    const fetchHistory = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch('/api/recent', { cache: 'no-store' }); // 👈 important
+          if (!res.ok) throw new Error('Failed to fetch history');
+          const data = await res.json();
+          setItems(data.items || []);
+        } catch (err) {
+          setError('Could not load history.');
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      };
     fetchHistory();
   }, []);
 
