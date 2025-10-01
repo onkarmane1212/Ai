@@ -183,7 +183,7 @@ export default function WhatIf() {
 
   return (
     <>
-      <main className="min-h-screen -mt-20 flex items-center justify-center bg-gray-100 p-4">
+      <main className="flex items-center justify-center bg-gray-100 p-4">
         <div className="w-full max-w-md bg-gradient-to-b from-teal-500 to-blue-500 rounded-xl shadow-xl p-6 text-center">
           <h1 className="text-xl font-bold text-white">
             Ask a What If... Open a new World
@@ -224,7 +224,7 @@ export default function WhatIf() {
       </main>
 
       {(responses.fantastical || responses.logical) && (
-        <div className="max-w-4xl mx-auto -mt-5 px-4">
+        <div className="max-w-4xl mx-auto  px-4">
           {/* Tab Buttons */}
           <div className="flex justify-center mb-6">
             <div className="inline-flex bg-gray-100 rounded-full p-1 shadow-md">
