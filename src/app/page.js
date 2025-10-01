@@ -196,7 +196,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-gray-200 to-blue-700 px-6 py-8 pb-12 rounded-3xl m-2 shadow-lg">
+      <div className="sticky top-14 bg-gradient-to-br from-gray-200 to-blue-800 px-6 py-8 pb-12 rounded-3xl mx-2 -mt-2 shadow-lg">
         <div className="max-w-md mx-auto">
           {/* Header */}
           <div className="flex justify-between items-start mb-8">
@@ -214,7 +214,7 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-purple-600 text-xl font-bold mb-1">Start New Chat</h2>
-                <p className="text-gray-500 text-sm">Begin a conversation with our AI assistant</p>
+                <p className="text-gray-500 text-sm">Begin a conversation with our What If? AI assistant</p>
               </div>
               <Link href="/whatif" className="bg-purple-600 hover:bg-purple-700 transition-all rounded-full p-3 ml-4 flex-shrink-0">
                 <Plus className="w-6 h-6 text-white" />
