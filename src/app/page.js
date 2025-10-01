@@ -1,251 +1,322 @@
-// 'use client';
 
-// import { useState } from 'react';
+// import React from 'react';
+// import { Lightbulb, Languages, User, Plus, MessageCircleQuestion, PenLine,MessageSquare, Code, GraduationCap, Link } from 'lucide-react';
+// import Link from 'next/link';
 
 // export default function Home() {
-//   const [question, setQuestion] = useState('');
-//   const [responses, setResponses] = useState({
-//     fantastical: '',
-//     logical: ''
-//   });
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [error, setError] = useState('');
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     if (!question.trim()) {
-//       setError('Please enter a question');
-//       return;
+//   const chats = [
+//     {
+//       id: 1,
+//       icon: MessageSquare,
+//       bgColor: 'bg-purple-200',
+//       iconColor: 'text-purple-600',
+//       title: 'Creative Writing Assistant',
+//       description: 'Help me write a short story about...',
+//       time: '2 hours ago'
+//     },
+//     {
+//       id: 2,
+//       icon: Code,
+//       bgColor: 'bg-green-100',
+//       iconColor: 'text-green-600',
+//       title: 'Code Helper',
+//       description: 'Can you explain this Python function?',
+//       time: 'Yesterday'
+//     },
+//     {
+//       id: 3,
+//       icon: GraduationCap,
+//       bgColor: 'bg-pink-100',
+//       iconColor: 'text-purple-600',
+//       title: 'Study Buddy',
+//       description: 'Explain quantum physics concepts',
+//       time: '3 days ago'
 //     }
-
-//     setIsLoading(true);
-//     setError('');
-//     setResponses({ fantastical: '', logical: '' });
-    
-//     try {
-//       // Fetch both responses in parallel
-//       const [fantasticalRes, logicalRes] = await Promise.all([
-//         fetch('/api/what-if', {
-//           method: 'POST',
-//           headers: { 'Content-Type': 'application/json' },
-//           body: JSON.stringify({ question, mode: 'fantastical' }),
-//         }),
-//         fetch('/api/what-if', {
-//           method: 'POST',
-//           headers: { 'Content-Type': 'application/json' },
-//           body: JSON.stringify({ question, mode: 'logical' }),
-//         })
-//       ]);
-
-//       if (!fantasticalRes.ok || !logicalRes.ok) {
-//         throw new Error('Failed to get responses');
-//       }
-
-//       const fantasticalData = await fantasticalRes.json();
-//       const logicalData = await logicalRes.json();
-
-//       setResponses({
-//         fantastical: fantasticalData.response,
-//         logical: logicalData.response
-//       });
-//     } catch (err) {
-//       setError('Failed to get responses. Please try again.');
-//       console.error(err);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
+//   ];
 
 //   return (
-//     <main className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-//       <div className="w-full max-w-md bg-gradient-to-b from-teal-500 to-blue-500 rounded-xl shadow-xl p-6 text-center">
-//         {/* Heading */}
-//         <h1 className="text-xl font-bold text-white">
-//           Ask a What If... Open a new World
-//         </h1>
-//         <p className="text-sm text-gray-100 mt-1">
-//           The possibilities are endless..
-//         </p>
-
-//         {/* Input */}
-//         <form onSubmit={handleSubmit} className="mt-4">
-//           <div className="text-left">
-//             <label
-//               htmlFor="questionInput"
-//               className="text-xs text-green-200 font-medium"
-//             >
-//               questionInput
-//             </label>
+//     <div className="min-h-screen bg-gray-50">
+//       {/* Hero Section */}
+//       <div className="bg-gradient-to-r from-gray-200 to-blue-700 px-6 py-8 pb-12 rounded-3xl m-2 shadow-lg">
+//         <div className="max-w-md mx-auto">
+//           {/* Header */}
+//           <div className="flex justify-between items-start mb-8">
+//             <div>
+//               <h1 className="text-white text-2xl font-bold">Good morning!</h1>
+//               <p className="text-purple-100 text-sm mt-1">Ready to chat with AI?</p>
+//             </div>
+//             <button className="bg-white bg-opacity-20 hover:bg-opacity-30 transition-all rounded-full p-2">
+//               <User className="w-6 h-6 text-white" />
+//             </button>
 //           </div>
-//           <textarea
-//             id="questionInput"
-//             rows="5"
-//             value={question}
-//             onChange={(e) => setQuestion(e.target.value)}
-//             placeholder="Type your question here....."
-//             className="w-full mt-1 p-3 rounded-md border border-gray-300 text-gray-800 text-sm resize-none"
-//           ></textarea>
 
-//           {/* Button */}
-//           <button
-//             type="submit"
-//             className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition"
-//           >
-//             Ask
-//           </button>
-//         </form>
+//           {/* Start Chat Card */}
+//           <div className="bg-white rounded-2xl p-6 shadow-xl">
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <h2 className="text-purple-600 text-xl font-bold mb-1">Start New Chat</h2>
+//                 <p className="text-gray-500 text-sm">Begin a conversation with our AI assistant</p>
+//               </div>
+//               <button className="bg-purple-600 hover:bg-purple-700 transition-all rounded-full p-3 ml-4 flex-shrink-0">
+//                 <Plus className="w-6 h-6 text-white" />
+//               </button>
+//             </div>
+//           </div>
+//         </div>
 //       </div>
-//     </main>
+
+
+//       <div className="bg-white rounded-2xl p-4 shadow-sm">
+//         {/* Header */}
+//         <div className="flex justify-between items-center mb-4">
+//           <h2 className="text-lg font-bold text-gray-900">Recent Chats</h2>
+//           <Link href="/recent" className="text-lg font-bold text-gray-900 hover:text-gray-600">View all</Link>
+//         </div>
+
+//         {/* Chat List */}
+//         <div className="space-y-3">
+//           {chats.map((chat) => (
+//             <button
+//               key={chat.id}
+//               className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
+//             >
+//               {/* Icon */}
+//               <div className={`${chat.bgColor} rounded-xl p-2.5 flex-shrink-0`}>
+//                 <chat.icon className={`w-5 h-5 ${chat.iconColor}`} />
+//               </div>
+
+//               {/* Content */}
+//               <div className="flex-1 min-w-0">
+//                 <h3 className="font-semibold text-gray-900 text-sm mb-0.5">
+//                   {chat.title}
+//                 </h3>
+//                 <p className="text-gray-500 text-xs truncate mb-1">
+//                   {chat.description}
+//                 </p>
+//                 <span className="text-gray-400 text-xs">{chat.time}</span>
+//               </div>
+//             </button>
+//           ))}
+//         </div>
+//       </div>
+
+//       {/* Quick Actions Section */}
+//       <div className="max-w-md mx-auto px-6 mt-10">
+//         <h2 className="text-gray-800 text-lg font-semibold mb-4">Quick Actions</h2>
+        
+//         <div className="grid grid-cols-2 gap-4">
+//           {/* Get Ideas Card */}
+//           <button className="bg-purple-200 hover:bg-purple-300 transition-all rounded-2xl p-6 text-center shadow-sm">
+//             <div className="bg-purple-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+//               <Lightbulb className="w-6 h-6 text-white" />
+//             </div>
+//             <h3 className="text-purple-900 font-semibold text-base mb-1">Get Ideas</h3>
+//             <p className="text-purple-700 text-xs">Brainstorm creative solutions</p>
+//           </button>
+
+//           {/* Translate Card */}
+//           <button className="bg-cyan-200 hover:bg-cyan-300 transition-all rounded-2xl p-6 text-center shadow-sm">
+//             <div className="bg-cyan-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+//               <Languages className="w-6 h-6 text-white" />
+//             </div>
+//             <h3 className="text-cyan-900 font-semibold text-base mb-1">Translate</h3>
+//             <p className="text-cyan-700 text-xs">Translate any language</p>
+//           </button>
+
+//           <button className="bg-orange-100 hover:bg-orange-200 transition-all rounded-2xl p-6 text-center shadow-sm">
+//             <div className="bg-purple-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+//               <MessageCircleQuestion className="w-6 h-6 text-white" />
+//             </div>
+//             <h3 className="text-purple-900 font-semibold text-base mb-1">Ask Questions</h3>
+//             <p className="text-purple-700 text-xs">Get instant answers</p>
+//           </button>
+
+//           {/* Write & Edit Card */}
+//           <button className="bg-white hover:bg-gray-50 transition-all rounded-2xl p-6 text-center shadow-sm border border-gray-100">
+//             <div className="bg-purple-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+//               <PenLine className="w-6 h-6 text-white" />
+//             </div>
+//             <h3 className="text-purple-900 font-semibold text-base mb-1">Write & Edit</h3>
+//             <p className="text-gray-500 text-xs">Improve your writing</p>
+//           </button>
+//         </div>
+//       </div>
+//     </div>
 //   );
 // }
 
+
 'use client';
 
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Lightbulb, Languages, User, Plus, MessageCircleQuestion, PenLine, MessageSquare, Code, GraduationCap } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
-  const [question, setQuestion] = useState('');
-  const [responses, setResponses] = useState({
-    fantastical: '',
-    logical: ''
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [items, setItems] = useState([]);
+  const [loadingRecent, setLoadingRecent] = useState(true);
+  const [recentErr, setRecentErr] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!question.trim()) {
-      setError('Please enter a question');
-      return;
-    }
 
-    setIsLoading(true);
-    setError('');
-    setResponses({ fantastical: '', logical: '' });
-    
-    try {
-      // Fetch both responses in parallel
-      const [fantasticalRes, logicalRes] = await Promise.all([
-        fetch('/api/what-if', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, mode: 'fantastical' }),
-        }),
-        fetch('/api/what-if', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, mode: 'logical' }),
-        })
-      ]);
-
-      if (!fantasticalRes.ok || !logicalRes.ok) {
-        throw new Error('Failed to get responses');
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning !';
+    if (hour < 18) return 'Good afternoon ! ';
+    return 'Good evening !';
+  };
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRecent() {
+      setLoadingRecent(true);
+      setRecentErr('');
+      try {
+        const res = await fetch('/api/recent', { method: 'GET' });
+        if (!res.ok) throw new Error('Failed to load recent');
+        const data = await res.json();
+        if (!cancelled) setItems(Array.isArray(data.items) ? data.items : []);
+      } catch (e) {
+        if (!cancelled) setRecentErr('Could not load recent items.');
+        console.error(e);
+      } finally {
+        if (!cancelled) setLoadingRecent(false);
       }
-
-      const fantasticalData = await fantasticalRes.json();
-      const logicalData = await logicalRes.json();
-
-      setResponses({
-        fantastical: fantasticalData.response,
-        logical: logicalData.response
-      });
-    } catch (err) {
-      setError('Failed to get responses. Please try again.');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
     }
+    loadRecent();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Helper to extract first line of a mode from responses
+  const getModeSnippet = (responses, mode) => {
+    const r = Array.isArray(responses) ? responses.find(x => x.mode === mode) : null;
+    if (!r?.content) return '';
+    const s = r.content.trim();
+    return s.length > 120 ? s.slice(0, 120) + '…' : s;
   };
 
   return (
-    <>
-    <main className="min-h-screen -mt-20 flex items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md bg-gradient-to-b from-teal-500 to-blue-500 rounded-xl shadow-xl p-6 text-center">
-        {/* Heading */}
-        <h1 className="text-xl font-bold text-white">
-          Ask a What If... Open a new World
-        </h1>
-        <p className="text-sm text-gray-100 mt-1">
-          The possibilities are endless..
-        </p>
-
-        {/* Input */}
-        <form onSubmit={handleSubmit} className="mt-4">
-          <div className="text-left">
-            <label
-              htmlFor="questionInput"
-              className="text-xs text-green-200 font-medium"
-            >
-              Question
-            </label>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-gray-200 to-blue-700 px-6 py-8 pb-12 rounded-3xl m-2 shadow-lg">
+        <div className="max-w-md mx-auto">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h1 className="text-white text-2xl font-bold">{getGreeting()}</h1>
+              <p className="text-purple-100 text-sm mt-1">Ready to chat with AI?</p>
+            </div>
+            <button className="bg-white bg-opacity-20 hover:bg-opacity-30 transition-all rounded-full p-2">
+              <User className="w-6 h-6 text-white" />
+            </button>
           </div>
-          <textarea
-            id="questionInput"
-            rows="5"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Type your question here....."
-            className="w-full mt-1 p-3 rounded-2xl border border-gray-300 text-gray-800 text-sm resize-none"
-          ></textarea>
 
-          {/* Button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="mt-4 w-full  bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl transition disabled:opacity-50"
-          >
-            {isLoading ? 'Thinking...' : 'Ask'}
+          {/* Start Chat Card */}
+          <div className="bg-white rounded-2xl p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-purple-600 text-xl font-bold mb-1">Start New Chat</h2>
+                <p className="text-gray-500 text-sm">Begin a conversation with our AI assistant</p>
+              </div>
+              <Link href="/whatif" className="bg-purple-600 hover:bg-purple-700 transition-all rounded-full p-3 ml-4 flex-shrink-0">
+                <Plus className="w-6 h-6 text-white" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Section */}
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Recent Chats</h2>
+            <Link href="/history" className="text-sm font-semibold text-indigo-700 hover:text-indigo-900">
+              View all
+            </Link>
+          </div>
+
+          {/* Loading / Error / Empty */}
+          {loadingRecent && (
+            <div className="grid gap-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="animate-pulse bg-gray-100 rounded-xl h-16" />
+              ))}
+            </div>
+          )}
+          {recentErr && <p className="text-red-600">{recentErr}</p>}
+          {!loadingRecent && !recentErr && items.length === 0 && (
+            <p className="text-gray-600">No recent chats yet. Ask something to get started.</p>
+          )}
+
+          {/* Recent List (limit to first 5) */}
+          {!loadingRecent && items.length > 0 && (
+            <div className="space-y-3">
+              {items.slice(0, 5).map((item) => {
+                const fant = getModeSnippet(item.responses, 'fantastical');
+                const logic = getModeSnippet(item.responses, 'logical');
+                const snippet = fant || logic || '';
+                return (
+                  <Link
+                    key={item._id}
+                    href="/history" // or a detail page in future
+                    className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <div className="bg-purple-100 rounded-xl p-2.5 flex-shrink-0">
+                      <MessageSquare className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 text-sm mb-0.5 truncate">
+                        {item.question}
+                      </h3>
+                      <p className="text-gray-500 text-xs truncate">
+                        {snippet}
+                      </p>
+                      <span className="text-gray-400 text-xs">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Actions Section */}
+      <div className="max-w-md mx-auto px-6 mt-6 pb-10">
+        <h2 className="text-gray-800 text-lg font-semibold mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <button className="bg-purple-200 hover:bg-purple-300 transition-all rounded-2xl p-6 text-center shadow-sm">
+            <div className="bg-purple-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+              <Lightbulb className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-purple-900 font-semibold text-base mb-1">Get Ideas</h3>
+            <p className="text-purple-700 text-xs">Brainstorm creative solutions</p>
           </button>
-        </form>
-
-        {/* Error */}
-        {error && <p className="mt-3 text-red-200 text-sm">{error}</p>}
-
-       
-      </div>
-    </main>
-     {/* Responses */}
-{/* Responses - side-by-side on md+, equal height, scroll if long */}
-{(responses.fantastical || responses.logical) && (
-  <div className="max-w-6xl mx-auto -mt-5 px-4 grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-    {/* Fantastical */}
-    {responses.fantastical && (
-      <div className="flex flex-col h-full bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 
-                      rounded-2xl shadow-lg border border-purple-100 p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-2xl">🌌</span>
-          <h2 className="font-extrabold text-lg text-purple-700 tracking-wide">Fantastical</h2>
-        </div>
-
-        <div className="flex-1 pr-2">
-          <pre className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">
-            {responses.fantastical}
-          </pre>
+          <button className="bg-cyan-200 hover:bg-cyan-300 transition-all rounded-2xl p-6 text-center shadow-sm">
+            <div className="bg-cyan-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+              <Languages className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-cyan-900 font-semibold text-base mb-1">Translate</h3>
+            <p className="text-cyan-700 text-xs">Translate any language</p>
+          </button>
+          <button className="bg-orange-100 hover:bg-orange-200 transition-all rounded-2xl p-6 text-center shadow-sm">
+            <div className="bg-purple-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+              <MessageCircleQuestion className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-purple-900 font-semibold text-base mb-1">Ask Questions</h3>
+            <p className="text-purple-700 text-xs">Get instant answers</p>
+          </button>
+          <button className="bg-white hover:bg-gray-50 transition-all rounded-2xl p-6 text-center shadow-sm border border-gray-100">
+            <div className="bg-purple-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+              <PenLine className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-purple-900 font-semibold text-base mb-1">Write & Edit</h3>
+            <p className="text-gray-500 text-xs">Improve your writing</p>
+          </button>
         </div>
       </div>
-    )}
-
-    {/* Logical */}
-    {responses.logical && (
-      <div className="flex flex-col h-full bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50 
-                      rounded-2xl shadow-lg border border-blue-100 p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-2xl">🧠</span>
-          <h2 className="font-extrabold text-lg text-blue-700 tracking-wide">Logical</h2>
-        </div>
-
-        <div className="flex-1 pr-2">
-          <pre className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">
-            {responses.logical}
-          </pre>
-        </div>
-      </div>
-    )}
-  </div>
-)}
-
-
-
-    </>
+    </div>
   );
 }
